@@ -1,37 +1,21 @@
-## Welcome to GitHub Pages
+# clockidup, the CLI for generating your standup entry using Clockify
 
-You can use the [editor on GitHub](https://github.com/maelvls/clockidup/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+Install:
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+```sh
+(cd && GO111MODULE=on go get github.com/maelvls/clockidup@latest)
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+Usage:
 
-### Jekyll Themes
+```sh
+# Login with Clockify:
+% clockidup login
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/maelvls/clockidup/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+# Print your standup entry for yesterday:
+% clockidup yesterday
+- [0.50] prod/cert-manager: cert-manager standup
+- [0.74] prod/cert-manager: reviewing PR 3574
+- [0.94] prod/cert-manager: cert-manager v1.2-alpha.1 release with irbe and maartje
+- [0.39] prod/cert-manager: cert-manager-dev biweekly meeting
+```
