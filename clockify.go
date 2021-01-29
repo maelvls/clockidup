@@ -9,7 +9,7 @@ import (
 
 	"github.com/sethgrid/gencurl"
 
-	"github.com/maelvls/standup/logutil"
+	"github.com/maelvls/clockidup/logutil"
 )
 
 type Workspace struct {

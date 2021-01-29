@@ -5,7 +5,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 
-	"github.com/maelvls/standup/logutil"
+	"github.com/maelvls/clockidup/logutil"
 )
 
 func login(existing Config) (new Config, err error) {

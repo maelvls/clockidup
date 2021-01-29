@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/maelvls/standup/logutil"
+	"github.com/maelvls/clockidup/logutil"
 )
 
 const confPath = ".config/standup.yml"
