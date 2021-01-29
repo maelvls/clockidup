@@ -18,73 +18,70 @@ var (
 )
 
 func main() {
+	flag.Parse()
+	logutil.EnableDebug = *debugFlag
+
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options] (yesterday|today|login)\n", filepath.Base(os.Args[0]))
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 	}
 
-	flag.Parse()
-
-	logutil.EnableDebug = *debugFlag
-
-	conf, err := loadConfig(confPath)
+	err := Run(*debugFlag, *tokenFlag)
 	if err != nil {
-		logutil.Errorf("could not load config: %s", err)
+		logutil.Errorf(err.Error())
 		os.Exit(1)
 	}
+}
 
-	var startT, endT time.Time
+func Run(debug bool, tokenFlag string) error {
+	conf, err := loadConfig(confPath)
+	if err != nil {
+		return fmt.Errorf("could not load config: %s", err)
+	}
+
+	var day time.Time
 	switch flag.Arg(0) {
-	case "yesterday":
-		startT = time.Now().AddDate(0, 0, -2)
-		endT = time.Now().AddDate(0, 0, -1)
-	case "today":
-		startT = time.Now().AddDate(0, 0, -1)
-		endT = time.Now().AddDate(0, 0, 0)
 	case "login":
 		conf, err := login(conf)
 		if err != nil {
-			logutil.Errorf("login failed: %s", err)
-			os.Exit(1)
+			return fmt.Errorf("login failed: %s", err)
 		}
-
 		logutil.Infof("you are logged in!")
 
 		err = saveConfig(confPath, conf)
 		if err != nil {
-			logutil.Errorf("saving configuration: %s", err)
-			os.Exit(1)
+			return fmt.Errorf("saving configuration: %s", err)
 		}
-
 		logutil.Debugf("config: %v")
-
-		os.Exit(0)
+		return nil
+	case "yesterday":
+		day = time.Now().AddDate(0, 0, -1)
+	case "today":
+		day = time.Now()
 	case "":
 		flag.Usage()
-		os.Exit(1)
+		return fmt.Errorf("")
 	}
 
 	token := conf.Token
-	if *tokenFlag != "" {
-		token = *tokenFlag
+	if tokenFlag != "" {
+		token = tokenFlag
 	}
 	if token == "" {
 		logutil.Errorf("not logged in, run the 'login' command first or use --token")
 		os.Exit(1)
 	}
 
-	start := time.Date(startT.Year(), startT.Month(), startT.Day(), 0, 0, 0, 0, startT.Location())
-	end := time.Date(endT.Year(), endT.Month(), endT.Day(), 0, 0, 0, 0, endT.Location())
+	start := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, day.Location())
+	end := time.Date(day.Year(), day.Month(), day.Day(), 23, 59, 59, 0, day.Location())
 
 	workspaces, err := clockifyWorkspaces(token)
 	if err != nil {
-		logutil.Errorf("%s", err)
-		os.Exit(1)
+		return fmt.Errorf("%s", err)
 	}
 	if len(workspaces) == 0 {
-		logutil.Errorf("no workspace found")
-		os.Exit(1)
+		return fmt.Errorf("no workspace found")
 	}
 
 	workspace := workspaces[0]
@@ -92,14 +89,12 @@ func main() {
 
 	timeEntries, err := clockifyTimeEntries(token, workspaces[0].ID, userID, start, end)
 	if err != nil {
-		logutil.Errorf("%s", err)
-		os.Exit(1)
+		return fmt.Errorf("%s", err)
 	}
 
 	projects, err := clockifyProjects(token, workspaces[0].ID)
 	if err != nil {
-		logutil.Errorf("%s", err)
-		os.Exit(1)
+		return fmt.Errorf("%s", err)
 	}
 	projectMap := make(map[string]Project)
 	for _, p := range projects {
@@ -136,4 +131,6 @@ func main() {
 		entry := mergedEntries[len(mergedEntries)-i-1]
 		fmt.Printf("- [%.2f] %s: %s\n", entry.Duration.Hours(), entry.Project, entry.Description)
 	}
+
+	return nil
 }
