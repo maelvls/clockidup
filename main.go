@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -43,7 +44,7 @@ func Run(debug bool, tokenFlag string) error {
 	var day time.Time
 	switch flag.Arg(0) {
 	case "login":
-		conf, err := login(conf)
+		conf, err := askToken(conf)
 		if err != nil {
 			return fmt.Errorf("login failed: %s", err)
 		}
@@ -68,7 +69,7 @@ func Run(debug bool, tokenFlag string) error {
 	if tokenFlag != "" {
 		token = tokenFlag
 	}
-	if token == "" {
+	if token == "" || !tokenWorks(token) {
 		logutil.Errorf("not logged in, run the 'login' command first or use --token")
 		os.Exit(1)
 	}
@@ -76,7 +77,9 @@ func Run(debug bool, tokenFlag string) error {
 	start := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, day.Location())
 	end := time.Date(day.Year(), day.Month(), day.Day(), 23, 59, 59, 0, day.Location())
 
-	workspaces, err := clockifyWorkspaces(token)
+	clockify := NewClockify(token, http.DefaultClient)
+
+	workspaces, err := clockify.Workspaces()
 	if err != nil {
 		return fmt.Errorf("%s", err)
 	}
@@ -87,12 +90,12 @@ func Run(debug bool, tokenFlag string) error {
 	workspace := workspaces[0]
 	userID := workspace.Memberships[0].UserID
 
-	timeEntries, err := clockifyTimeEntries(token, workspaces[0].ID, userID, start, end)
+	timeEntries, err := clockify.TimeEntries(workspaces[0].ID, userID, start, end)
 	if err != nil {
 		return fmt.Errorf("%s", err)
 	}
 
-	projects, err := clockifyProjects(token, workspaces[0].ID)
+	projects, err := clockify.Projects(workspaces[0].ID)
 	if err != nil {
 		return fmt.Errorf("%s", err)
 	}

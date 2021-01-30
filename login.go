@@ -2,22 +2,34 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/AlecAivazis/survey/v2"
 
 	"github.com/maelvls/clockidup/logutil"
 )
 
-func login(existing Config) (new Config, err error) {
+func tokenWorks(token string) bool {
+	clockify := NewClockify(token, http.DefaultClient)
+	_, err := clockify.Workspaces()
+	return err != nil
+}
+
+func askToken(existing Config) (new Config, err error) {
 	logutil.Infof("the API token is available at %s", logutil.Green("https://clockify.me/user/settings"))
 	token := existing.Token
 
 	// Check whether the existing token already works or not and ask the
 	// user if it already works.
-	_, err = clockifyWorkspaces(token)
-	if err == nil {
-		override := false
-		err = survey.Ask([]*survey.Question{{Name: "override", Prompt: &survey.Confirm{Message: "Existing token seems to be valid. Override it?"}}}, &override)
+
+	if tokenWorks(existing.Token) {
+		var override bool
+		err = survey.Ask([]*survey.Question{{
+			Name: "override",
+			Prompt: &survey.Confirm{
+				Message: "Existing token seems to be valid. Override it?",
+			}}}, &override,
+		)
 		if err != nil {
 			return Config{}, err
 		}
@@ -39,8 +51,7 @@ func login(existing Config) (new Config, err error) {
 		return Config{}, err
 	}
 
-	_, err = clockifyWorkspaces(token)
-	if err != nil {
+	if !tokenWorks(token) {
 		return Config{}, fmt.Errorf("token seems to be invalid")
 	}
 

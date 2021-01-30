@@ -12,6 +12,20 @@ import (
 	"github.com/maelvls/clockidup/logutil"
 )
 
+type Clockify struct {
+	*http.Client
+}
+
+// The client can be left nil to use the default client. The given client
+// will be mutated in order to set the X-Api-Key header.
+func NewClockify(token string, cl *http.Client) *Clockify {
+	if cl == nil {
+		cl = http.DefaultClient
+	}
+	cl.Transport = trWithToken{trWrapped: cl.Transport}
+	return &Clockify{Client: cl}
+}
+
 type Workspace struct {
 	ID         string `json:"id"`
 	Name       string `json:"name"`
@@ -61,19 +75,18 @@ type Workspace struct {
 	FeatureSubscriptionType interface{} `json:"featureSubscriptionType"`
 }
 
-func clockifyWorkspaces(token string) ([]Workspace, error) {
+func (c *Clockify) Workspaces() ([]Workspace, error) {
 	path := "/api/v1/workspaces"
 	req, err := http.NewRequest("GET", "https://api.clockify.me"+path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating HTTP request for GET %s: %w", path, err)
 	}
-	req.Header.Set("X-Api-Key", token)
 
 	if logutil.EnableDebug {
 		logutil.Debugf("%s", gencurl.FromRequest(req))
 	}
 
-	httpResp, err := http.DefaultClient.Do(req)
+	httpResp, err := c.Client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("while calling GET %s: %w", path, err)
 	}
@@ -148,19 +161,18 @@ type Project struct {
 	Public         bool        `json:"public"`
 }
 
-func clockifyProjects(token, workspaceID string) ([]Project, error) {
+func (c *Clockify) Projects(workspaceID string) ([]Project, error) {
 	path := fmt.Sprintf("/api/v1/workspaces/%s/projects", workspaceID)
 	req, err := http.NewRequest("GET", "https://api.clockify.me"+path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating HTTP request for GET %s: %w", path, err)
 	}
-	req.Header.Set("X-Api-Key", token)
 
 	if logutil.EnableDebug {
 		logutil.Debugf("%s", gencurl.FromRequest(req))
 	}
 
-	httpResp, err := http.DefaultClient.Do(req)
+	httpResp, err := c.Client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("while calling GET %s: %w", path, err)
 	}
@@ -219,7 +231,7 @@ type ClockifyError struct {
 	Code    int    `json:"code"`
 }
 
-func clockifyTimeEntries(token, workspaceID, userID string, start, end time.Time) ([]TimeEntry, error) {
+func (c *Clockify) TimeEntries(workspaceID, userID string, start, end time.Time) ([]TimeEntry, error) {
 	path := fmt.Sprintf("/api/v1/workspaces/%s/user/%s/time-entries?start=%s&end=%s",
 		workspaceID,
 		userID,
@@ -234,13 +246,12 @@ func clockifyTimeEntries(token, workspaceID, userID string, start, end time.Time
 	if err != nil {
 		return nil, fmt.Errorf("creating HTTP request for GET %s: %w", path, err)
 	}
-	req.Header.Set("X-Api-Key", token)
 
 	if logutil.EnableDebug {
 		logutil.Debugf("%s", gencurl.FromRequest(req))
 	}
 
-	httpResp, err := http.DefaultClient.Do(req)
+	httpResp, err := c.Client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("while doing GET %s: %w", path, err)
 	}
@@ -274,4 +285,14 @@ func clockifyTimeEntries(token, workspaceID, userID string, start, end time.Time
 	}
 
 	return timeEntry, nil
+}
+
+type trWithToken struct {
+	trWrapped http.RoundTripper
+	token     string
+}
+
+func (tr trWithToken) RoundTrip(r *http.Request) (*http.Response, error) {
+	r.Header.Set("X-Api-Key", tr.token)
+	return tr.trWrapped.RoundTrip(r)
 }
