@@ -12,7 +12,7 @@ import (
 func tokenWorks(token string) bool {
 	clockify := NewClockify(token, http.DefaultClient)
 	_, err := clockify.Workspaces()
-	return err != nil
+	return err == nil
 }
 
 func askToken(existing Config) (new Config, err error) {
@@ -51,6 +51,7 @@ func askToken(existing Config) (new Config, err error) {
 		return Config{}, err
 	}
 
+	logutil.Debugf("token: %s", token)
 	if !tokenWorks(token) {
 		return Config{}, fmt.Errorf("token seems to be invalid")
 	}

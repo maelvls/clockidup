@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sethgrid/gencurl"
-
 	"github.com/maelvls/clockidup/logutil"
+	"github.com/sethgrid/gencurl"
 )
 
 type Clockify struct {
@@ -22,57 +21,67 @@ func NewClockify(token string, cl *http.Client) *Clockify {
 	if cl == nil {
 		cl = http.DefaultClient
 	}
-	cl.Transport = trWithToken{trWrapped: cl.Transport}
+	if cl.Transport == nil {
+		cl.Transport = http.DefaultTransport
+	}
+	cl.Transport = transport{
+		trWrapped: cl.Transport,
+		token:     token,
+	}
 	return &Clockify{Client: cl}
 }
 
 type Workspace struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	HourlyRate struct {
-		Amount   int    `json:"amount"`
-		Currency string `json:"currency"`
-	} `json:"hourlyRate"`
-	Memberships []struct {
-		UserID           string      `json:"userId"`
-		HourlyRate       interface{} `json:"hourlyRate"`
-		CostRate         interface{} `json:"costRate"`
-		TargetID         string      `json:"targetId"`
-		MembershipType   string      `json:"membershipType"`
-		MembershipStatus string      `json:"membershipStatus"`
-	} `json:"memberships"`
-	WorkspaceSettings struct {
-		TimeRoundingInReports      bool        `json:"timeRoundingInReports"`
-		OnlyAdminsSeeBillableRates bool        `json:"onlyAdminsSeeBillableRates"`
-		OnlyAdminsCreateProject    bool        `json:"onlyAdminsCreateProject"`
-		OnlyAdminsSeeDashboard     bool        `json:"onlyAdminsSeeDashboard"`
-		DefaultBillableProjects    bool        `json:"defaultBillableProjects"`
-		LockTimeEntries            interface{} `json:"lockTimeEntries"`
-		Round                      struct {
-			Round   string `json:"round"`
-			Minutes string `json:"minutes"`
-		} `json:"round"`
-		ProjectFavorites                   bool          `json:"projectFavorites"`
-		CanSeeTimeSheet                    bool          `json:"canSeeTimeSheet"`
-		CanSeeTracker                      bool          `json:"canSeeTracker"`
-		ProjectPickerSpecialFilter         bool          `json:"projectPickerSpecialFilter"`
-		ForceProjects                      bool          `json:"forceProjects"`
-		ForceTasks                         bool          `json:"forceTasks"`
-		ForceTags                          bool          `json:"forceTags"`
-		ForceDescription                   bool          `json:"forceDescription"`
-		OnlyAdminsSeeAllTimeEntries        bool          `json:"onlyAdminsSeeAllTimeEntries"`
-		OnlyAdminsSeePublicProjectsEntries bool          `json:"onlyAdminsSeePublicProjectsEntries"`
-		TrackTimeDownToSecond              bool          `json:"trackTimeDownToSecond"`
-		ProjectGroupingLabel               string        `json:"projectGroupingLabel"`
-		AdminOnlyPages                     []interface{} `json:"adminOnlyPages"`
-		AutomaticLock                      interface{}   `json:"automaticLock"`
-		OnlyAdminsCreateTag                bool          `json:"onlyAdminsCreateTag"`
-		OnlyAdminsCreateTask               bool          `json:"onlyAdminsCreateTask"`
-		TimeTrackingMode                   string        `json:"timeTrackingMode"`
-		IsProjectPublicByDefault           bool          `json:"isProjectPublicByDefault"`
-	} `json:"workspaceSettings"`
-	ImageURL                string      `json:"imageUrl"`
-	FeatureSubscriptionType interface{} `json:"featureSubscriptionType"`
+	ID                      string            `json:"id"`
+	Name                    string            `json:"name"`
+	HourlyRate              HourlyRate        `json:"hourlyRate"`
+	Memberships             []Memberships     `json:"memberships"`
+	WorkspaceSettings       WorkspaceSettings `json:"workspaceSettings"`
+	ImageURL                string            `json:"imageUrl"`
+	FeatureSubscriptionType interface{}       `json:"featureSubscriptionType"`
+}
+type HourlyRate struct {
+	Amount   int    `json:"amount"`
+	Currency string `json:"currency"`
+}
+type Memberships struct {
+	UserID           string      `json:"userId"`
+	HourlyRate       interface{} `json:"hourlyRate"`
+	CostRate         interface{} `json:"costRate"`
+	TargetID         string      `json:"targetId"`
+	MembershipType   string      `json:"membershipType"`
+	MembershipStatus string      `json:"membershipStatus"`
+}
+type Round struct {
+	Round   string `json:"round"`
+	Minutes string `json:"minutes"`
+}
+type WorkspaceSettings struct {
+	TimeRoundingInReports              bool          `json:"timeRoundingInReports"`
+	OnlyAdminsSeeBillableRates         bool          `json:"onlyAdminsSeeBillableRates"`
+	OnlyAdminsCreateProject            bool          `json:"onlyAdminsCreateProject"`
+	OnlyAdminsSeeDashboard             bool          `json:"onlyAdminsSeeDashboard"`
+	DefaultBillableProjects            bool          `json:"defaultBillableProjects"`
+	LockTimeEntries                    interface{}   `json:"lockTimeEntries"`
+	Round                              Round         `json:"round"`
+	ProjectFavorites                   bool          `json:"projectFavorites"`
+	CanSeeTimeSheet                    bool          `json:"canSeeTimeSheet"`
+	CanSeeTracker                      bool          `json:"canSeeTracker"`
+	ProjectPickerSpecialFilter         bool          `json:"projectPickerSpecialFilter"`
+	ForceProjects                      bool          `json:"forceProjects"`
+	ForceTasks                         bool          `json:"forceTasks"`
+	ForceTags                          bool          `json:"forceTags"`
+	ForceDescription                   bool          `json:"forceDescription"`
+	OnlyAdminsSeeAllTimeEntries        bool          `json:"onlyAdminsSeeAllTimeEntries"`
+	OnlyAdminsSeePublicProjectsEntries bool          `json:"onlyAdminsSeePublicProjectsEntries"`
+	TrackTimeDownToSecond              bool          `json:"trackTimeDownToSecond"`
+	ProjectGroupingLabel               string        `json:"projectGroupingLabel"`
+	AdminOnlyPages                     []interface{} `json:"adminOnlyPages"`
+	AutomaticLock                      interface{}   `json:"automaticLock"`
+	OnlyAdminsCreateTag                bool          `json:"onlyAdminsCreateTag"`
+	OnlyAdminsCreateTask               bool          `json:"onlyAdminsCreateTask"`
+	TimeTrackingMode                   string        `json:"timeTrackingMode"`
+	IsProjectPublicByDefault           bool          `json:"isProjectPublicByDefault"`
 }
 
 func (c *Clockify) Workspaces() ([]Workspace, error) {
@@ -80,10 +89,6 @@ func (c *Clockify) Workspaces() ([]Workspace, error) {
 	req, err := http.NewRequest("GET", "https://api.clockify.me"+path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating HTTP request for GET %s: %w", path, err)
-	}
-
-	if logutil.EnableDebug {
-		logutil.Debugf("%s", gencurl.FromRequest(req))
 	}
 
 	httpResp, err := c.Client.Do(req)
@@ -168,10 +173,6 @@ func (c *Clockify) Projects(workspaceID string) ([]Project, error) {
 		return nil, fmt.Errorf("creating HTTP request for GET %s: %w", path, err)
 	}
 
-	if logutil.EnableDebug {
-		logutil.Debugf("%s", gencurl.FromRequest(req))
-	}
-
 	httpResp, err := c.Client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("while calling GET %s: %w", path, err)
@@ -247,10 +248,6 @@ func (c *Clockify) TimeEntries(workspaceID, userID string, start, end time.Time)
 		return nil, fmt.Errorf("creating HTTP request for GET %s: %w", path, err)
 	}
 
-	if logutil.EnableDebug {
-		logutil.Debugf("%s", gencurl.FromRequest(req))
-	}
-
 	httpResp, err := c.Client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("while doing GET %s: %w", path, err)
@@ -287,12 +284,16 @@ func (c *Clockify) TimeEntries(workspaceID, userID string, start, end time.Time)
 	return timeEntry, nil
 }
 
-type trWithToken struct {
+type transport struct {
 	trWrapped http.RoundTripper
 	token     string
 }
 
-func (tr trWithToken) RoundTrip(r *http.Request) (*http.Response, error) {
+func (tr transport) RoundTrip(r *http.Request) (*http.Response, error) {
 	r.Header.Set("X-Api-Key", tr.token)
+
+	if logutil.EnableDebug {
+		logutil.Debugf("%s", gencurl.FromRequest(r))
+	}
 	return tr.trWrapped.RoundTrip(r)
 }

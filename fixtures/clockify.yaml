@@ -1,0 +1,112 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      X-Api-Key:
+      - redacted-token
+    url: https://api.clockify.me/api/v1/workspaces
+    method: GET
+  response:
+    body: '[{"featureSubscriptionType":null,"hourlyRate":{"amount":0,"currency":"USD"},"id":"fake-id","imageUrl":"","memberships":[{"costRate":null,"hourlyRate":null,"membershipStatus":"ACTIVE","membershipType":"WORKSPACE","targetId":"fake-target-id","userId":"fake-user-id"}],"name":"Maël
+      Valais''s workspace","workspaceSettings":{"adminOnlyPages":[],"automaticLock":null,"canSeeTimeSheet":false,"canSeeTracker":true,"defaultBillableProjects":true,"forceDescription":false,"forceProjects":false,"forceTags":false,"forceTasks":false,"isProjectPublicByDefault":true,"lockTimeEntries":null,"onlyAdminsCreateProject":true,"onlyAdminsCreateTag":false,"onlyAdminsCreateTask":false,"onlyAdminsSeeAllTimeEntries":false,"onlyAdminsSeeBillableRates":true,"onlyAdminsSeeDashboard":false,"onlyAdminsSeePublicProjectsEntries":false,"projectFavorites":true,"projectGroupingLabel":"client","projectPickerSpecialFilter":false,"round":{"minutes":"15","round":"Round
+      to nearest"},"timeRoundingInReports":false,"timeTrackingMode":"DEFAULT","trackTimeDownToSecond":true}}]'
+    headers:
+      Access-Control-Allow-Credentials:
+      - "true"
+      Access-Control-Allow-Headers:
+      - Content-Type, X-Auth-Token, X-Api-Key, X-Auth-Checksum, Authorization, Ignore-Synchronization,
+        Socket-Connection-ID, App-Name, App-Version, Sub-Domain-Name
+      Access-Control-Allow-Methods:
+      - POST, GET, PUT, OPTIONS, DELETE, HEAD, PATCH
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-Authorization-Url, X-Auth-Checksum, Expected-Client-Version, App-Name, App-Version,
+        Sub-Domain-Name
+      Access-Control-Max-Age:
+      - "3600"
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Sun, 31 Jan 2021 15:41:44 GMT
+      Expected-Client-Version:
+      - 1.0.0
+      Expires:
+      - "0"
+      Pragma:
+      - no-cache
+      Server:
+      - nginx
+      Vary:
+      - Accept-Encoding
+      X-Application-Context:
+      - application:file.S3,payment.stripe,newsletter,email.mandrill,logstash,default,prod
+      X-Auth-Checksum:
+      - f3be8ab1a64c487a1f5e83013714f138f6b2f6d429d38c15cf97d364e7afc325
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-Host:
+      - api.clockify.me
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      X-Api-Key:
+      - redacted-token
+    url: https://api.clockify.me/api/v1/workspaces
+    method: GET
+  response:
+    body: '{"code":1000,"message":"Full authentication is required to access this
+      resource"}'
+    headers:
+      Access-Control-Allow-Credentials:
+      - "true"
+      Access-Control-Allow-Headers:
+      - Content-Type, X-Auth-Token, X-Api-Key, X-Auth-Checksum, Authorization, Ignore-Synchronization,
+        Socket-Connection-ID, App-Name, App-Version, Sub-Domain-Name
+      Access-Control-Allow-Methods:
+      - POST, GET, PUT, OPTIONS, DELETE, HEAD, PATCH
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-Authorization-Url, X-Auth-Checksum, Expected-Client-Version, App-Name, App-Version,
+        Sub-Domain-Name
+      Access-Control-Max-Age:
+      - "3600"
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Content-Length:
+      - "81"
+      Content-Type:
+      - application/json
+      Date:
+      - Sun, 31 Jan 2021 15:41:44 GMT
+      Expected-Client-Version:
+      - 1.0.0
+      Expires:
+      - "0"
+      Pragma:
+      - no-cache
+      Server:
+      - nginx
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 401 Unauthorized
+    code: 401
+    duration: ""

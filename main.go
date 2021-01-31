@@ -54,7 +54,7 @@ func Run(debug bool, tokenFlag string) error {
 		if err != nil {
 			return fmt.Errorf("saving configuration: %s", err)
 		}
-		logutil.Debugf("config: %v")
+		logutil.Debugf("config: %+v", conf)
 		return nil
 	case "yesterday":
 		day = time.Now().AddDate(0, 0, -1)
