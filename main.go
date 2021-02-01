@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/tj/go-naturaldate"
@@ -163,7 +164,20 @@ func Run(tokenFlag string) error {
 	fmt.Printf("%s:\n", day.Format("Monday, 2 Jan 2006"))
 	for i := range mergedEntries {
 		entry := mergedEntries[len(mergedEntries)-i-1]
-		fmt.Printf("- [%.2f] %s: %s\n", entry.Duration.Hours(), entry.Project, entry.Description)
+
+		// The format "%.1f" (precision = 1) rounds the 2nd digit after the
+		// decimal to the closest neightbor. We also remove the leading
+		// zero to distinguish "small" amounts (e.g. 0.5) from larger
+		// amounts (e.g. 2.0). For example:
+		//
+		//  0.55 becomes ".5"
+		//  0.56 becomes ".6"
+		//  0.98 becomes "1.0"
+		//  1.85 becomes "1.8"
+		//  1.86 becomes "1.9"
+		hours := fmt.Sprintf("%.1f", entry.Duration.Hours())
+		hours = strings.TrimPrefix(hours, "0")
+		fmt.Printf("- [%s] %s: %s\n", hours, entry.Project, entry.Description)
 	}
 
 	return nil
