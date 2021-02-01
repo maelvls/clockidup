@@ -19,6 +19,15 @@ const confPath = ".config/standup.yml"
 var (
 	tokenFlag = flag.String("token", "", "the Clockify API token")
 	debugFlag = flag.Bool("debug", false, "show debug output")
+
+	showVersion = flag.Bool("version", false, "Print version. Note that it returns 'n/a (commit none, built on unknown)' when built with 'go get'.")
+	// The 'version' var is set during build, using something like:
+	//  go build  -ldflags"-X main.version=$(git describe --tags)".
+	// Note: "version", "commit" and "date" are set automatically by
+	// goreleaser.
+	version = "n/a"
+	commit  = "none"
+	date    = "unknown"
 )
 
 func main() {
@@ -28,10 +37,10 @@ func main() {
 	flag.Usage = func() {
 		cmd := filepath.Base(os.Args[0])
 		fmt.Fprintf(os.Stderr, "Usage: %s [options] login\n", cmd)
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] (yesterday | today)\n", cmd)
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] \"last thursday\"\n", cmd)
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] \"2 days ago\"\n", cmd)
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] \"28 Jan 2021\"\n", cmd)
+		fmt.Fprintf(os.Stderr, "Usage: %s (yesterday | today)\n", cmd)
+		fmt.Fprintf(os.Stderr, "Usage: %s \"last thursday\"\n", cmd)
+		fmt.Fprintf(os.Stderr, "Usage: %s \"2 days ago\"\n", cmd)
+		fmt.Fprintf(os.Stderr, "Usage: %s \"28 Jan 2021\"\n", cmd)
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 	}
@@ -68,7 +77,9 @@ func Run(tokenFlag string) error {
 		flag.Usage()
 		return fmt.Errorf("a command is required, e.g. 'login' or 'yesterday'")
 	default:
-		day, err = naturaldate.Parse(flag.Arg(0), time.Now())
+		day, err = naturaldate.Parse(flag.Arg(0), time.Now(),
+			naturaldate.WithDirection(naturaldate.Past),
+		)
 		logutil.Debugf("day parsed: %s", day.String())
 		if err != nil {
 			return fmt.Errorf("'%s' does not seem to be a valid date, see https://github.com/tj/go-naturaldate#examples: %s", flag.Arg(0), err)
