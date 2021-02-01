@@ -25,7 +25,7 @@ clockidup login
 
 You can print your standup message for yesterday:
 
-```sh
+```md
 % clockidup yesterday
 Thursday, 28 Jan 2021:
 - [.5] prod/cert-manager: cert-manager standup
@@ -37,7 +37,7 @@ Thursday, 28 Jan 2021:
 
 You can also print today's message:
 
-```sh
+```md
 % clockidup today
 Monday, 1 Feb 2021:
 - [2.8] no-project: easy-slack-oauth
@@ -62,7 +62,7 @@ clockidup "last tuesday"
 
 Tasks in Clockify are also supported and can be optionally used. If a time entry has an associated task, the task name will prefix the entry description. Imagine that you have a time entry "fix progress bar" and this time entry is linked to a broader task "download feature", then the output will be:
 
-```
+```md
 - [0.50] prod/my-super-product: download feature: add progress bar
          <----project name----> <---task name---> <--entry name-->
 ```
