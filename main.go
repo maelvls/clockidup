@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/tj/go-naturaldate"
+
 	"github.com/maelvls/clockidup/logutil"
 )
 
@@ -23,7 +25,11 @@ func main() {
 	logutil.EnableDebug = *debugFlag
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] (yesterday|today|login)\n", filepath.Base(os.Args[0]))
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] login\n", filepath.Base(os.Args[0]))
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] (yesterday | today)\n", filepath.Base(os.Args[0]))
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] \"last thursday\"\n", filepath.Base(os.Args[0]))
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] \"2 days ago\"\n", filepath.Base(os.Args[0]))
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] \"28 Jan 2021\"\n", filepath.Base(os.Args[0]))
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 	}
@@ -56,13 +62,14 @@ func Run(debug bool, tokenFlag string) error {
 		}
 		logutil.Debugf("config: %+v", conf)
 		return nil
-	case "yesterday":
-		day = time.Now().AddDate(0, 0, -1)
-	case "today":
-		day = time.Now()
 	case "":
 		flag.Usage()
 		return fmt.Errorf("")
+	default:
+		day, err = naturaldate.Parse(flag.Arg(0), time.Now())
+		if err != nil {
+			return fmt.Errorf("'%s' does not seem to be a valid date, see https://github.com/tj/go-naturaldate#examples: %s", flag.Arg(0), err)
+		}
 	}
 
 	token := conf.Token
@@ -145,6 +152,8 @@ func Run(debug bool, tokenFlag string) error {
 		entriesSeen[entry.Description] = &new
 	}
 
+	// Print the current day as well as the time entries.
+	fmt.Printf("%s:\n", day.Format("Monday, 2 Jan 2006"))
 	for i := range mergedEntries {
 		entry := mergedEntries[len(mergedEntries)-i-1]
 		fmt.Printf("- [%.2f] %s: %s\n", entry.Duration.Hours(), entry.Project, entry.Description)

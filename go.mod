@@ -9,5 +9,6 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	github.com/sethgrid/gencurl v0.0.0-20161025011400-a3af93c1aba4
 	github.com/stretchr/testify v1.7.0
+	github.com/tj/go-naturaldate v1.3.0
 	gopkg.in/yaml.v2 v2.4.0
 )
