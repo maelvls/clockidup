@@ -210,13 +210,13 @@ func (c *Clockify) Projects(workspaceID string) ([]Project, error) {
 }
 
 type TimeEntry struct {
-	ID           string      `json:"id"`
-	Description  string      `json:"description"`
-	TagIds       interface{} `json:"tagIds"`
-	UserID       string      `json:"userId"`
-	Billable     bool        `json:"billable"`
-	TaskID       interface{} `json:"taskId"`
-	ProjectID    string      `json:"projectId"`
+	ID           string   `json:"id"`
+	Description  string   `json:"description"`
+	TagIds       []string `json:"tagIds"`
+	UserID       string   `json:"userId"`
+	Billable     bool     `json:"billable"`
+	TaskID       string   `json:"taskId"`
+	ProjectID    string   `json:"projectId"`
 	TimeInterval struct {
 		Start    time.Time `json:"start"`
 		End      time.Time `json:"end"`
@@ -282,6 +282,65 @@ func (c *Clockify) TimeEntries(workspaceID, userID string, start, end time.Time)
 	}
 
 	return timeEntry, nil
+}
+
+type Task struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	ProjectID   string   `json:"projectId"`
+	AssigneeIds []string `json:"assigneeIds"`
+	AssigneeID  string   `json:"assigneeId"`
+	Estimate    string   `json:"estimate"`
+	Status      string   `json:"status"`
+	Duration    string   `json:"duration"`
+}
+
+func (c *Clockify) Task(workspaceID, projectID, taskID string) (Task, error) {
+	path := fmt.Sprintf("/api/v1/workspaces/%s/projects/%s/tasks/%s",
+		workspaceID,
+		projectID,
+		taskID,
+	)
+
+	req, err := http.NewRequest("GET", "https://api.clockify.me"+path, nil)
+	if err != nil {
+		return Task{}, fmt.Errorf("creating HTTP request for GET %s: %w", path, err)
+	}
+
+	httpResp, err := c.Client.Do(req)
+	if err != nil {
+		return Task{}, fmt.Errorf("while doing GET %s: %w", path, err)
+	}
+	defer httpResp.Body.Close()
+
+	bytes, err := ioutil.ReadAll(httpResp.Body)
+	if err != nil {
+		return Task{}, fmt.Errorf("while reading HTTP response for %s: %w", path, err)
+	}
+
+	switch httpResp.StatusCode {
+	case 400, 401, 403, 500:
+		var errResp ClockifyError
+
+		msg := "(raw body) " + string(bytes)
+		err = json.Unmarshal(bytes, &errResp)
+		if err == nil {
+			msg = errResp.Message
+		}
+		return Task{}, fmt.Errorf("%s", msg)
+	case 200:
+		// continue below
+	default:
+		return Task{}, fmt.Errorf("unxpected HTTP status code %d for GET %s: %s", httpResp.StatusCode, path, bytes)
+	}
+
+	var task Task
+	err = json.Unmarshal(bytes, &task)
+	if err != nil {
+		return Task{}, fmt.Errorf("while parsing JSON from the HTTP response for GET %s: %w", path, err)
+	}
+
+	return task, nil
 }
 
 type transport struct {

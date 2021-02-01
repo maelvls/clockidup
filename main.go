@@ -99,9 +99,23 @@ func Run(debug bool, tokenFlag string) error {
 	if err != nil {
 		return fmt.Errorf("%s", err)
 	}
-	projectMap := make(map[string]Project)
-	for _, p := range projects {
-		projectMap[p.ID] = p
+	projectMap := make(map[string]*Project)
+	for i := range projects {
+		proj := &projects[i]
+		projectMap[proj.ID] = proj
+	}
+
+	// Find the corresponding task when the taskId is set.
+	for i := range timeEntries {
+		entry := &timeEntries[i]
+		if entry.TaskID == "" {
+			continue
+		}
+		task, err := clockify.Task(entry.WorkspaceID, entry.ProjectID, entry.TaskID)
+		if err != nil {
+			return fmt.Errorf("while fetching task for time entry '%s: %s': %s", projectMap[entry.ProjectID].Name, entry.Description, err)
+		}
+		entry.Description = task.Name + ": " + entry.Description
 	}
 
 	// Deduplicate activities: when two activities have the same
@@ -110,6 +124,7 @@ func Run(debug bool, tokenFlag string) error {
 	type MergedEntry struct {
 		Project     string
 		Description string
+		Task        string
 		Duration    time.Duration
 	}
 	entriesSeen := make(map[string]*MergedEntry)
