@@ -23,7 +23,7 @@ clockidup login
 
 You can print your standup message for yesterday:
 
-```
+```sh
 % clockidup yesterday
 Thursday, 28 Jan 2021:
 - [.5] prod/cert-manager: cert-manager standup
@@ -35,7 +35,7 @@ Thursday, 28 Jan 2021:
 
 You can also print today's message:
 
-```
+```sh
 % clockidup today
 Monday, 1 Feb 2021:
 - [2.8] no-project: easy-slack-oauth
@@ -45,10 +45,17 @@ Monday, 1 Feb 2021:
 
 You can even use an arbitrary human-readable relative date as specified by [tj/go-naturaldate](https://github.com/tj/go-naturaldate#examples). Some examples:
 
-```
-clockidup "last tuesday"
+```sh
+clockidup tuesday
 clockidup "4 days ago"
 clockidup "28 Jan"
+```
+
+Note that the following commands are equivalent:
+
+```sh
+clockidup tuesday
+clockidup "last tuesday"
 ```
 
 Tasks in Clockify are also supported and can be optionally used. If a time entry has an associated task, the task name will prefix the entry description. Imagine that you have a time entry "fix progress bar" and this time entry is linked to a broader task "download feature", then the output will be:
