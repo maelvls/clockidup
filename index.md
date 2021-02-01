@@ -24,10 +24,11 @@ You can print your standup message for yesterday:
 
 ```
 % clockidup yesterday
-- [0.50] prod/cert-manager: cert-manager standup
-- [0.74] prod/cert-manager: reviewing PR 3574
-- [0.94] prod/cert-manager: cert-manager v1.2-alpha.1 release with irbe and maartje
-- [0.39] prod/cert-manager: cert-manager-dev biweekly meeting
+Thursday, 28 Jan 2021:
+- [.5] prod/cert-manager: cert-manager standup
+- [.7] prod/cert-manager: reviewing PR 3574
+- [1.0] prod/cert-manager: cert-manager v1.2-alpha.1 release with irbe and maartje
+- [.4] prod/cert-manager: cert-manager-dev biweekly meeting
 ```
 
 
@@ -35,7 +36,19 @@ You can also print today's message:
 
 ```
 % clockidup today
-- [2.85] : easy-slack-oauth
+Monday, 1 Feb 2021:
+- [2.8] no-project: easy-slack-oauth
 ```
 
-(Note that I did not set the project for today's entries, which is an invalid standup message)
+> Note: I did not set the project for today's entries, which is an invalid standup message.
+
+You can even use an arbitrary human-readable relative date as specified by [tj/go-naturaldate](https://github.com/tj/go-naturaldate#examples). Some examples:
+
+```
+clockidup "last tuesday"
+clockidup "4 days ago"
+clockidup "28 Jan"
+```
+
+
+
