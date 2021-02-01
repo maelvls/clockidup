@@ -25,23 +25,24 @@ func main() {
 	logutil.EnableDebug = *debugFlag
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] login\n", filepath.Base(os.Args[0]))
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] (yesterday | today)\n", filepath.Base(os.Args[0]))
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] \"last thursday\"\n", filepath.Base(os.Args[0]))
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] \"2 days ago\"\n", filepath.Base(os.Args[0]))
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] \"28 Jan 2021\"\n", filepath.Base(os.Args[0]))
+		cmd := filepath.Base(os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] login\n", cmd)
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] (yesterday | today)\n", cmd)
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] \"last thursday\"\n", cmd)
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] \"2 days ago\"\n", cmd)
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] \"28 Jan 2021\"\n", cmd)
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 	}
 
-	err := Run(*debugFlag, *tokenFlag)
+	err := Run(*tokenFlag)
 	if err != nil {
 		logutil.Errorf(err.Error())
 		os.Exit(1)
 	}
 }
 
-func Run(debug bool, tokenFlag string) error {
+func Run(tokenFlag string) error {
 	conf, err := loadConfig(confPath)
 	if err != nil {
 		return fmt.Errorf("could not load config: %s", err)
@@ -64,9 +65,10 @@ func Run(debug bool, tokenFlag string) error {
 		return nil
 	case "":
 		flag.Usage()
-		return fmt.Errorf("")
+		return fmt.Errorf("a command is required, e.g. 'login' or 'yesterday'")
 	default:
 		day, err = naturaldate.Parse(flag.Arg(0), time.Now())
+		logutil.Debugf("day parsed: %s", day.String())
 		if err != nil {
 			return fmt.Errorf("'%s' does not seem to be a valid date, see https://github.com/tj/go-naturaldate#examples: %s", flag.Arg(0), err)
 		}
@@ -143,8 +145,13 @@ func Run(debug bool, tokenFlag string) error {
 			continue
 		}
 
+		projectName := "no-project"
+		if entry.ProjectID != "" {
+			projectName = projectMap[entry.ProjectID].Name
+		}
+
 		new := MergedEntry{
-			Project:     projectMap[entry.ProjectID].Name,
+			Project:     projectName,
 			Description: entry.Description,
 			Duration:    entry.TimeInterval.End.Sub(entry.TimeInterval.Start),
 		}
