@@ -73,6 +73,10 @@ func Run(tokenFlag string) error {
 		if err != nil {
 			return fmt.Errorf("'%s' does not seem to be a valid date, see https://github.com/tj/go-naturaldate#examples: %s", flag.Arg(0), err)
 		}
+
+		if day.After(time.Now()) {
+			return fmt.Errorf("cannot give a future date, %s is in the future", day)
+		}
 	}
 
 	token := conf.Token
