@@ -1,5 +1,10 @@
 The `clockidup` CLI helps you generating your standup entry using the time entries from [Clockify](https://clockify.me).
 
+Features:
+
+- User-friendly `login` command for setting up and remembering the Clockify token;
+- De-duplication of time entries that have the same description.
+
 ## Installation
 
 ```sh
