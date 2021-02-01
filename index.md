@@ -12,6 +12,8 @@ Features:
 (cd && GO111MODULE=on go get github.com/maelvls/clockidup@latest)
 ```
 
+[![GitHub tag](https://img.shields.io/github/release/maelvls/clockidup.svg)](https://github.com/maelvls/clockidup/releases)
+
 ## Usage
 
 
