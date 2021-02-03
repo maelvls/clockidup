@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/lithammer/dedent"
 	"github.com/tj/go-naturaldate"
 
 	"github.com/maelvls/clockidup/logutil"
@@ -35,13 +35,20 @@ func main() {
 	logutil.EnableDebug = *debugFlag
 
 	flag.Usage = func() {
-		cmd := filepath.Base(os.Args[0])
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] login\n", cmd)
-		fmt.Fprintf(os.Stderr, "Usage: %s (yesterday | today)\n", cmd)
-		fmt.Fprintf(os.Stderr, "Usage: %s \"last thursday\"\n", cmd)
-		fmt.Fprintf(os.Stderr, "Usage: %s \"2 days ago\"\n", cmd)
-		fmt.Fprintf(os.Stderr, "Usage: %s \"28 Jan 2021\"\n", cmd)
-		fmt.Fprintf(os.Stderr, "Options:\n")
+		fmt.Fprint(os.Stderr, dedent.Dedent(`
+            Usage:
+              clockidup [options] (login | DATE)
+
+            Examples:
+              clockidup login
+              clockidup yesterday
+              clockidup today
+              clockidup thursday
+              clockidup "2 days ago"
+              clockidup "28 Jan 2021"
+
+            Options:
+		`))
 		flag.PrintDefaults()
 	}
 
@@ -175,8 +182,13 @@ func Run(tokenFlag string) error {
 		entriesSeen[entry.Description] = &new
 	}
 
-	// Print the current day as well as the time entries.
-	fmt.Printf("%s:\n", day.Format("Monday, 2 Jan 2006"))
+	// Print the current day e.g., "Monday" if the date is within a week in
+	// the past; otherwise, print "2021-01-28".
+	if day.After(time.Now().AddDate(0, 0, -6)) {
+		fmt.Printf("%s:\n", day.Format("Monday"))
+	} else {
+		fmt.Printf("%s:\n", day.Format("2006-01-02"))
+	}
 	for i := range mergedEntries {
 		entry := mergedEntries[len(mergedEntries)-i-1]
 
