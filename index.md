@@ -1,6 +1,19 @@
-The `clockidup` CLI helps you generating your standup entry using the time entries from [Clockify](https://clockify.me).
+The `clockidup` CLI helps you generating your standup entry using the time entries from [Clockify](https://clockify.me). Imagine that you recorded your activity and your Clockify day looks like this:
 
-Features:
+![example-clockify](https://user-images.githubusercontent.com/2195781/106798923-ef23ec80-665e-11eb-8810-c023b00a2c14.png)
+
+The `clockidup` CLI allows you to generate the following standup message:
+
+```md
+% clockidup today
+Wednesday:
+- [.8] prod/cert-manager: cert-manager standup
+- [1.2] prod/cert-manager: triaging #2037: HTTPS support for the solver’s listener
+- [4.6] prod/cert-manager: preparing for 1.2: get #3505 merged
+- [4.1] prod/cert-manager: work on jsp-gcm: add manual test for cas-issuer
+```
+
+## Features
 
 - User-friendly `login` command for setting up and remembering the Clockify token;
 - De-duplication of time entries that have the same description;
