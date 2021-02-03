@@ -27,19 +27,18 @@ You can print your standup message for yesterday:
 
 ```md
 % clockidup yesterday
-Thursday, 28 Jan 2021:
+Thursday:
 - [.5] prod/cert-manager: cert-manager standup
 - [.7] prod/cert-manager: reviewing PR 3574
 - [1.0] prod/cert-manager: cert-manager v1.2-alpha.1 release with irbe and maartje
 - [.4] prod/cert-manager: cert-manager-dev biweekly meeting
 ```
 
-
 You can also print today's message:
 
 ```md
 % clockidup today
-Monday, 1 Feb 2021:
+Monday:
 - [2.8] no-project: easy-slack-oauth
 ```
 
@@ -66,3 +65,38 @@ Tasks in Clockify are also supported and can be optionally used. If a time entry
 - [0.50] prod/my-super-product: download feature: add progress bar
          <----project name----> <---task name---> <--entry name-->
 ```
+
+The date printed on the first line is compatible with the expected standup date format. It either shows the week day e.g. "Monday" if the given day is within the past week and "2021-01-28" if not.
+
+For example, when the day is within the week:
+
+
+For example, when the day is within the week:
+
+```md
+% clockidup today
+Wednesday:
+- [.8] prod/cert-manager: cert-manager standup
+- [1.2] prod/cert-manager: triaging #2037: HTTPS support for the solver’s listener
+- [4.6] prod/cert-manager: preparing for 1.2: get #3505 merged
+- [4.1] prod/cert-manager: work on jsp-gcm: add manual test for cas-issuer
+```
+
+And when the day is more than 7 days ago:
+
+```md
+% clockidup wednesday
+2021-01-27:
+- [2.6] prod/cert-manager: work on jsp-gcm
+- [.6] admin: coffee with Mattias Gees
+- [.0] prod/cert-manager: cert-manager standup
+- [.7] prod/cert-manager: reviewing josh comments on PR 3574
+- [.1] prod/cert-manager: review of Design: cert-manager certificates.k8s.io Adoption
+- [.1] prod/cert-manager: review of Design: cert-manager Identity
+- [.1] prod/cert-manager: review of Design cert-manager Policy
+- [1.6] prod/cert-manager: investigate #3603 "multiple certificaterequests"
+- [.9] prod/cert-manager: cert-manager v1.2-alpha.1 release with irbe and maartje
+- [.6] prod/cert-manager: cert-manager internal meeting
+- [.4] prod/cert-manager: cert-manager-dev biweekly meeting
+```md
+
