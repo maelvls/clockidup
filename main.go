@@ -163,7 +163,7 @@ func Run(tokenFlag string) error {
 	var mergedEntries []*MergedEntry
 	for _, entry := range timeEntries {
 		existing, found := entriesSeen[entry.Description]
-		if found {
+		if found && !entry.TimeInterval.End.IsZero() {
 			existing.Duration += entry.TimeInterval.End.Sub(entry.TimeInterval.Start)
 			continue
 		}
@@ -173,10 +173,18 @@ func Run(tokenFlag string) error {
 			projectName = projectMap[entry.ProjectID].Name
 		}
 
+		// When the time entry is still "ticking" i.e., the user has not
+		// stopped the timer yet, the "end" date is null. In this case, we
+		// still want to have an estimation of how long this entry has been
+		// going on for.
+		duration := entry.TimeInterval.End.Sub(entry.TimeInterval.Start)
+		if entry.TimeInterval.End.IsZero() {
+			duration = time.Now().UTC().Sub(entry.TimeInterval.Start)
+		}
 		new := MergedEntry{
 			Project:     projectName,
 			Description: entry.Description,
-			Duration:    entry.TimeInterval.End.Sub(entry.TimeInterval.Start),
+			Duration:    duration,
 		}
 		mergedEntries = append(mergedEntries, &new)
 		entriesSeen[entry.Description] = &new
