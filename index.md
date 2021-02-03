@@ -70,9 +70,6 @@ The date printed on the first line is compatible with the expected standup date 
 
 For example, when the day is within the week:
 
-
-For example, when the day is within the week:
-
 ```md
 % clockidup today
 Wednesday:
