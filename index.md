@@ -98,5 +98,5 @@ And when the day is more than 7 days ago:
 - [.9] prod/cert-manager: cert-manager v1.2-alpha.1 release with irbe and maartje
 - [.6] prod/cert-manager: cert-manager internal meeting
 - [.4] prod/cert-manager: cert-manager-dev biweekly meeting
-```md
+```
 
