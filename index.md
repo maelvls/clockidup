@@ -100,5 +100,5 @@ And when the day is more than 7 days ago:
 - [.4] prod/cert-manager: cert-manager-dev biweekly meeting
 ```
 
-<div style="text-align: right">🐓 <a href="https://github.com/maelvls/clockidup/edit/gh-pages/index.md">Edit<a/> this page</div>
+<div style="text-align: right">🐓 <a href="https://github.com/maelvls/clockidup/edit/gh-pages/index.md">Edit this page<a/></div>
 
