@@ -8,13 +8,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lithammer/dedent"
+	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/tj/go-naturaldate"
 
 	"github.com/maelvls/clockidup/logutil"
 )
 
-const confPath = ".config/standup.yml"
+const (
+	confPath  = ".config/standup.yml"
+	layoutISO = "2006-01-02"
+)
 
 var (
 	tokenFlag = flag.String("token", "", "the Clockify API token")
@@ -35,7 +38,7 @@ func main() {
 	logutil.EnableDebug = *debugFlag
 
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, dedent.Dedent(`
+		fmt.Fprint(os.Stderr, heredoc.Doc(`
             Usage:
               clockidup [options] (login | DATE)
 
@@ -45,7 +48,7 @@ func main() {
               clockidup today
               clockidup thursday
               clockidup "2 days ago"
-              clockidup "28 Jan 2021"
+              clockidup "2021-01-28"
 
             Options:
 		`))
@@ -84,12 +87,29 @@ func Run(tokenFlag string) error {
 		flag.Usage()
 		return fmt.Errorf("a command is required, e.g. 'login' or 'yesterday'")
 	default:
-		day, err = naturaldate.Parse(flag.Arg(0), time.Now(),
-			naturaldate.WithDirection(naturaldate.Past),
-		)
+		day, err = time.Parse(layoutISO, flag.Arg(0))
+		if err != nil {
+			day, err = naturaldate.Parse(flag.Arg(0), time.Now(),
+				naturaldate.WithDirection(naturaldate.Past),
+			)
+		}
 		logutil.Debugf("day parsed: %s", day.String())
 		if err != nil {
-			return fmt.Errorf("'%s' does not seem to be a valid date, see https://github.com/tj/go-naturaldate#examples: %s", flag.Arg(0), err)
+			logutil.Debugf("error parsing: %s", err)
+			return fmt.Errorf(heredoc.Doc(`
+			'%s' is not a valid date. The date must of the form:
+
+			    2021-12-31
+			    today
+			    yesterday
+			    three days ago
+			    3 days ago
+				wednesday
+			    monday
+				last tuesday
+
+			See the documentation at https://github.com/tj/go-naturaldate#examples.`),
+				flag.Arg(0))
 		}
 
 		if day.After(time.Now()) {
