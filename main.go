@@ -20,8 +20,9 @@ const (
 )
 
 var (
-	tokenFlag = flag.String("token", "", "the Clockify API token")
-	debugFlag = flag.Bool("debug", false, "show debug output")
+	tokenFlag    = flag.String("token", "", "The Clockify API token.")
+	debugFlag    = flag.Bool("debug", false, "Show debug output, including the HTTP requests.")
+	onlyBillable = flag.Bool("billable", false, "Only print the entries that are billable.")
 
 	showVersion = flag.Bool("version", false, "Print version. Note that it returns 'n/a (commit none, built on unknown)' when built with 'go get'.")
 	// The 'version' var is set during build, using something like:
@@ -48,7 +49,8 @@ func main() {
               clockidup today
               clockidup thursday
               clockidup "2 days ago"
-              clockidup "2021-01-28"
+              clockidup 2021-01-28
+              clockidup --billable yesterday
 
             Options:
 		`))
@@ -97,18 +99,18 @@ func Run(tokenFlag string) error {
 		if err != nil {
 			logutil.Debugf("error parsing: %s", err)
 			return fmt.Errorf(heredoc.Doc(`
-			'%s' is not a valid date. The date must of the form:
+				'%s' is not a valid date. The date must of the form:
 
-			    2021-12-31
-			    today
-			    yesterday
-			    three days ago
-			    3 days ago
-				wednesday
-			    monday
-				last tuesday
+				    2021-12-31
+				    today
+				    yesterday
+				    three days ago
+				    3 days ago
+				    wednesday
+				    monday
+				    last tuesday
 
-			See the documentation at https://github.com/tj/go-naturaldate#examples.`),
+				See the documentation at https://github.com/tj/go-naturaldate#examples.`),
 				flag.Arg(0))
 		}
 
@@ -170,6 +172,20 @@ func Run(tokenFlag string) error {
 		entry.Description = task.Name + ": " + entry.Description
 	}
 
+	// When onlyBillable is enabled, we leave out the non-billable entries.
+	selectBillable := func(entries []TimeEntry) []TimeEntry {
+		var selected []TimeEntry
+		for _, entry := range entries {
+			if entry.Billable {
+				selected = append(selected, entry)
+			}
+		}
+		return selected
+	}
+	if *onlyBillable {
+		timeEntries = selectBillable(timeEntries)
+	}
+
 	// Deduplicate activities: when two activities have the same
 	// description, I merge them by summing up their duration. The key of
 	// the entriesSeen map is the description string.
@@ -178,6 +194,7 @@ func Run(tokenFlag string) error {
 		Description string
 		Task        string
 		Duration    time.Duration
+		Billable    bool
 	}
 	entriesSeen := make(map[string]*MergedEntry)
 	var mergedEntries []*MergedEntry
