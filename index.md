@@ -22,7 +22,7 @@ Wednesday:
 ## Installation
 
 ```sh
-(cd && GO111MODULE=on go get github.com/maelvls/clockidup@latest)
+go install github.com/maelvls/clockidup@latest
 ```
 
 [![GitHub tag](https://img.shields.io/github/release/maelvls/clockidup.svg)](https://github.com/maelvls/clockidup/releases)
@@ -92,10 +92,11 @@ Wednesday:
 - [4.1] prod/cert-manager: work on jsp-gcm: add manual test for cas-issuer
 ```
 
-And when the day is more than 7 days ago:
+And when the day is more than 7 days ago, you can use the
+[ISO 8601, calendar date](https://en.wikipedia.org/wiki/ISO_8601#Calendar_dates) format as input:
 
 ```md
-% clockidup wednesday
+% clockidup 2021-01-27
 2021-01-27:
 - [2.6] prod/cert-manager: work on jsp-gcm
 - [.6] admin: coffee with Mattias Gees
