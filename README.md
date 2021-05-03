@@ -3,7 +3,7 @@
 Install:
 
 ```sh
-(cd && GO111MODULE=on go get github.com/maelvls/clockidup@latest)
+go install github.com/maelvls/clockidup@latest
 ```
 
 Usage:
@@ -22,3 +22,5 @@ Wednesday:
 - [0.94] prod/cert-manager: cert-manager v1.2-alpha.1 release with irbe and maartje
 - [0.39] prod/cert-manager: cert-manager-dev biweekly meeting
 ```
+
+See more at <https://maelvls.dev/clockidup>.
