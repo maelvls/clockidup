@@ -17,6 +17,7 @@ Wednesday:
 
 - User-friendly `login` command for setting up and remembering the Clockify token;
 - De-duplication of time entries that have the same description;
+- Supports the "bibblable" property,
 - Supports tasks (see below).
 
 ## Installation
@@ -28,7 +29,6 @@ go install github.com/maelvls/clockidup@latest
 [![GitHub tag](https://img.shields.io/github/release/maelvls/clockidup.svg)](https://github.com/maelvls/clockidup/releases)
 
 ## Usage
-
 
 To login with Clockify:
 
@@ -93,7 +93,7 @@ Wednesday:
 ```
 
 And when the day is more than 7 days ago, you can use the
-[ISO 8601, calendar date](https://en.wikipedia.org/wiki/ISO_8601#Calendar_dates) format as input:
+[ISO 8601, calendar date](https://en.wikipedia.org/wiki/ISO_8601#Calendar_dates) format as input (as of v0.2.0):
 
 ```md
 % clockidup 2021-01-27
@@ -110,6 +110,9 @@ And when the day is more than 7 days ago, you can use the
 - [.6] prod/cert-manager: cert-manager internal meeting
 - [.4] prod/cert-manager: cert-manager-dev biweekly meeting
 ```
+
+You can use the `--billable` flag if you only want to see the Clockify entries
+that have the `billable: true` property.
 
 <div style="text-align: right"><a href="https://github.com/maelvls/clockidup/edit/gh-pages/index.md">🐓 Edit this page</a></div>
 
