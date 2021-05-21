@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	confPath  = ".config/standup.yml"
+	confPath  = ".config/clockidup.yml"
 	layoutISO = "2006-01-02"
 )
 
@@ -92,7 +92,7 @@ to the entry text:
 
 {{ section "CONFIG FILE" }}
 
-The auth token is saved to {{ url "~/.config/standup.yml" }}. The file looks
+The auth token is saved to {{ url "~/.config/clockidup.yml" }}. The file looks
 like this:
 
     token: your-clockify-auth-token
@@ -136,6 +136,10 @@ func main() {
 	}
 	flag.Usage = printHelp(false)
 	flag.Parse()
+
+	if *debugFlag {
+		logutil.EnableDebug = true
+	}
 
 	err := Run(*tokenFlag, printHelp)
 	if err != nil {
@@ -206,8 +210,13 @@ func Run(tokenFlag string, printHelp func(bool) func()) error {
 	if tokenFlag != "" {
 		token = tokenFlag
 	}
-	if token == "" || !tokenWorks(token) {
-		logutil.Errorf("not logged in, run the 'login' command first or use --token")
+
+	if token == "" {
+		logutil.Errorf("no configuration found in ~/.config/clockidup.yml, run 'clockidup login' first or use --token")
+		os.Exit(1)
+	}
+	if !tokenWorks(token) {
+		logutil.Errorf("existing token does not work, run the 'login' command first or use --token")
 		os.Exit(1)
 	}
 

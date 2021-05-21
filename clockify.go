@@ -16,14 +16,22 @@ type Clockify struct {
 }
 
 // The client can be left nil to use the default client. The given client
-// will be mutated in order to set the X-Api-Key header.
+// will be mutated in order to set the X-Api-Key header. You can use a nil
+// client to use the default http.Client.
+//
+// This function is not thread-safe when giving it an existing client. If
+// you do, only call this function once, since it modifies the passed
+// http.Client. This function does not do any network call and does not
+// check the validity of the token.
 func NewClockify(token string, cl *http.Client) *Clockify {
 	if cl == nil {
-		cl = http.DefaultClient
+		cl = &http.Client{}
 	}
+
 	if cl.Transport == nil {
 		cl.Transport = http.DefaultTransport
 	}
+
 	cl.Transport = transport{
 		trWrapped: cl.Transport,
 		token:     token,
@@ -350,9 +358,14 @@ type transport struct {
 
 func (tr transport) RoundTrip(r *http.Request) (*http.Response, error) {
 	r.Header.Set("X-Api-Key", tr.token)
+	resp, err := tr.trWrapped.RoundTrip(r)
 
+	// We won't show the body here since the io.Reader might already be
+	// read somewhere else and it can only be read once. We could use a
+	// buffer for that though...
 	if logutil.EnableDebug {
-		logutil.Debugf("%s", gencurl.FromRequest(r))
+		logutil.Debugf("%s [%d]", gencurl.FromRequest(r), resp.StatusCode)
 	}
-	return tr.trWrapped.RoundTrip(r)
+
+	return resp, err
 }
