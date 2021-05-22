@@ -28,6 +28,10 @@ Wednesday:
 go install github.com/maelvls/clockidup@latest
 ```
 
+You can also use the pre-built binaries available on the [GitHub
+Release](https://github.com/maelvls/clockidup/releases) page (for Linux and
+macOS).
+
 [![GitHub tag](https://img.shields.io/github/release/maelvls/clockidup.svg)](https://github.com/maelvls/clockidup/releases)
 
 ## Usage
