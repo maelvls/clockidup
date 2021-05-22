@@ -116,5 +116,5 @@ And when the day is more than 7 days ago, you can use the
 You can use the `--billable` flag if you only want to see the Clockify entries
 that have the `billable: true` property.
 
-<div style="text-align: right"><a href="https://github.com/maelvls/clockidup/edit/gh-pages/index.md">🐓 Edit this page</a></div>
+<div style="text-align: right"><a href="https://github.com/maelvls/clockidup/edit/main/README.md">🐓 Edit this page</a></div>
 
