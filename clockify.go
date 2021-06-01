@@ -135,6 +135,21 @@ func (c *Clockify) Workspaces() ([]Workspace, error) {
 	return workspaces, nil
 }
 
+func (c *Clockify) FindWorkspace(workspaces []Workspace, name string) (Workspace, error) {
+	// Maintain previous logic, that if no workspace name is provided we return the first.
+	if name == "" {
+		return workspaces[0], nil
+	}
+
+	for _, workspace := range workspaces {
+		if workspace.Name == name {
+			return workspace, nil
+		}
+	}
+
+	return Workspace{}, fmt.Errorf("unable to find workspace %s", name)
+}
+
 type Project struct {
 	ID         string `json:"id"`
 	Name       string `json:"name"`

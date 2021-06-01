@@ -28,7 +28,8 @@ func saveConfig(pathRelativeToHome string, c Config) error {
 }
 
 type Config struct {
-	Token string `yaml:"token"`
+	Token     string `yaml:"token"`
+	Workspace string `yaml:"workspace,omitempty"`
 }
 
 func loadConfig(pathRelativeToHome string) (Config, error) {

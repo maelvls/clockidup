@@ -25,9 +25,10 @@ const (
 )
 
 var (
-	tokenFlag    = flag.String("token", "", "The Clockify API token.")
-	debugFlag    = flag.Bool("debug", false, "Show debug output, including the HTTP requests.")
-	onlyBillable = flag.Bool("billable", false, "Only print the entries that are billable.")
+	tokenFlag     = flag.String("token", "", "The Clockify API token.")
+	workspaceFlag = flag.String("workspace", "", "Workspace Name to use.")
+	debugFlag     = flag.Bool("debug", false, "Show debug output, including the HTTP requests.")
+	onlyBillable  = flag.Bool("billable", false, "Only print the entries that are billable.")
 
 	// The 'version' var is set during build, using something like:
 	//  go build  -ldflags"-X main.version=$(git describe --tags)".
@@ -140,14 +141,14 @@ func main() {
 		logutil.EnableDebug = true
 	}
 
-	err := Run(*tokenFlag, printHelp)
+	err := Run(*tokenFlag, *workspaceFlag, printHelp)
 	if err != nil {
 		logutil.Errorf(err.Error())
 		os.Exit(1)
 	}
 }
 
-func Run(tokenFlag string, printHelp func(bool) func()) error {
+func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) error {
 	conf, err := loadConfig(confPath)
 	if err != nil {
 		return fmt.Errorf("could not load config: %s", err)
@@ -239,18 +240,26 @@ func Run(tokenFlag string, printHelp func(bool) func()) error {
 		return fmt.Errorf("%s", err)
 	}
 	if len(workspaces) == 0 {
-		return fmt.Errorf("no workspace found")
+		return fmt.Errorf("no workspaces found")
 	}
 
-	workspace := workspaces[0]
+	workspaceName := workspaceFlag
+	if workspaceName == "" {
+		workspaceName = conf.Workspace
+	}
+
+	workspace, err := clockify.FindWorkspace(workspaces, workspaceName)
+	if err != nil {
+		return fmt.Errorf("%s", err)
+	}
 	userID := workspace.Memberships[0].UserID
 
-	timeEntries, err := clockify.TimeEntries(workspaces[0].ID, userID, start, end)
+	timeEntries, err := clockify.TimeEntries(workspace.ID, userID, start, end)
 	if err != nil {
 		return fmt.Errorf("%s", err)
 	}
 
-	projects, err := clockify.Projects(workspaces[0].ID)
+	projects, err := clockify.Projects(workspace.ID)
 	if err != nil {
 		return fmt.Errorf("%s", err)
 	}
