@@ -175,6 +175,20 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		}
 		logutil.Debugf("config: %+v", conf)
 		return nil
+	case "select":
+		conf.Workspace = ""
+		conf, err = askWorkspace(conf)
+		if err != nil {
+			return fmt.Errorf("unable to set workspace: %s", err)
+		}
+		logutil.Infof("set workspace to: %s", conf.Workspace)
+
+		err = saveConfig(confPath, conf)
+		if err != nil {
+			return fmt.Errorf("saving configuration: %s", err)
+		}
+		logutil.Debugf("config: %+v", conf)
+		return nil
 	case "version":
 		if version == "" {
 			version, err = versionUsingGo()
@@ -246,17 +260,22 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		return fmt.Errorf("%s", err)
 	}
 	if len(workspaces) == 0 {
-		return fmt.Errorf("no workspaces found")
+		return fmt.Errorf("no workspaces found, check your token and re-login via 'clockeditup login'")
 	}
 
-	workspaceName := conf.Workspace
+	workspaceName := workspaceFlag
 	if workspaceName == "" {
-		workspaceName = workspaceFlag
+		workspaceName = conf.Workspace
+	}
+	if workspaceName == "" {
+		logutil.Errorf("no workspace selected, use 'clockidup select' or verify ' -workspace flag' to set a workspace")
+		os.Exit(1)
 	}
 
-	workspace, err := clockify.FindWorkspace(workspaces, workspaceName)
-	if err != nil {
-		return fmt.Errorf("%s", err)
+	workspace, workspaceFound := FindWorkspace(workspaces, workspaceName)
+	if !workspaceFound {
+		logutil.Errorf("Unable to find workspace '%s', use 'clockidup select' or verify ' -workspace flag' to set a workspace", workspaceName)
+		os.Exit(1)
 	}
 	userID := workspace.Memberships[0].UserID
 

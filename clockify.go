@@ -123,7 +123,7 @@ func (c *Clockify) Workspaces() ([]Workspace, error) {
 	case 200:
 		// continue below
 	default:
-		return nil, fmt.Errorf("unxpected HTTP status code %d for GET %s: %s", httpResp.StatusCode, path, bytes)
+		return nil, fmt.Errorf("unexpected HTTP status code %d for GET %s: %s", httpResp.StatusCode, path, bytes)
 	}
 
 	var workspaces []Workspace
@@ -135,19 +135,20 @@ func (c *Clockify) Workspaces() ([]Workspace, error) {
 	return workspaces, nil
 }
 
-func (c *Clockify) FindWorkspace(workspaces []Workspace, name string) (Workspace, error) {
-	// Maintain previous logic, that if no workspace name is provided we return the first.
+func FindWorkspace(workspaces []Workspace, name string) (Workspace, bool) {
+	// If no workspace is selected or name provided, we return that it is not found
+	// You must now select a workspace during login or via the select subcommand
 	if name == "" {
-		return workspaces[0], nil
+		return Workspace{}, false
 	}
 
 	for _, workspace := range workspaces {
 		if workspace.Name == name {
-			return workspace, nil
+			return workspace, true
 		}
 	}
 
-	return Workspace{}, fmt.Errorf("unable to find workspace %s", name)
+	return Workspace{}, false
 }
 
 type Project struct {
