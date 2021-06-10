@@ -154,6 +154,8 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		return fmt.Errorf("could not load config: %s", err)
 	}
 
+	logutil.Debugf("config loaded from ~/.config/clockidup.yaml: %#s", conf)
+
 	var day time.Time
 	switch flag.Arg(0) {
 	case "login":
@@ -176,7 +178,6 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		logutil.Debugf("config: %+v", conf)
 		return nil
 	case "select":
-		conf.Workspace = ""
 		conf, err = askWorkspace(conf)
 		if err != nil {
 			return fmt.Errorf("unable to set workspace: %s", err)
