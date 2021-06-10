@@ -13,7 +13,7 @@ func saveConfig(pathRelativeToHome string, c Config) error {
 		return fmt.Errorf("finding HOME: %s", err)
 	}
 
-	f, err := os.OpenFile(home+"/"+pathRelativeToHome, os.O_WRONLY|os.O_CREATE, 0600)
+	f, err := os.OpenFile(home+"/"+pathRelativeToHome, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return fmt.Errorf("opening config '%s': %s", pathRelativeToHome, err)
 	}
