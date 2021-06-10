@@ -165,7 +165,7 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 
 		conf, err = askWorkspace(conf)
 		if err != nil {
-			return fmt.Errorf("Unable to set workspace: %s", err)
+			return fmt.Errorf("unable to set workspace: %s", err)
 		}
 		logutil.Infof("Set workspace to: %s", conf.Workspace)
 
