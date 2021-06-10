@@ -51,6 +51,10 @@ func askToken(existing Config) (new Config, err error) {
 		return Config{}, err
 	}
 
+	if !tokenWorks(token) {
+		return Config{}, fmt.Errorf("token seems to be invalid")
+	}
+
 	return Config{
 		Token: token,
 	}, nil

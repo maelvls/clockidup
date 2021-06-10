@@ -25,10 +25,10 @@ const (
 )
 
 var (
-	tokenFlag     = flag.String("token", "", "The Clockify API token.")
-	workspaceFlag = flag.String("workspace", "", "Workspace Name to use.")
 	debugFlag     = flag.Bool("debug", false, "Show debug output, including the HTTP requests.")
 	onlyBillable  = flag.Bool("billable", false, "Only print the entries that are billable.")
+	tokenFlag     = flag.String("token", "", "The Clockify API token.")
+	workspaceFlag = flag.String("workspace", "", "Workspace Name to use.")
 
 	// The 'version' var is set during build, using something like:
 	//  go build  -ldflags"-X main.version=$(git describe --tags)".
