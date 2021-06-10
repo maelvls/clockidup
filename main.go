@@ -249,9 +249,9 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		return fmt.Errorf("no workspaces found")
 	}
 
-	workspaceName := workspaceFlag
+	workspaceName := conf.Workspace
 	if workspaceName == "" {
-		workspaceName = conf.Workspace
+		workspaceName = workspaceFlag
 	}
 
 	workspace, err := clockify.FindWorkspace(workspaces, workspaceName)
