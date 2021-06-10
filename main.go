@@ -163,6 +163,12 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		}
 		logutil.Infof("you are logged in!")
 
+		conf, err = askWorkspace(conf)
+		if err != nil {
+			return fmt.Errorf("Unable to set workspace: %s", err)
+		}
+		logutil.Infof("Set workspace to: %s", conf.Workspace)
+
 		err = saveConfig(confPath, conf)
 		if err != nil {
 			return fmt.Errorf("saving configuration: %s", err)

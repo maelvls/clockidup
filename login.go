@@ -51,11 +51,63 @@ func askToken(existing Config) (new Config, err error) {
 		return Config{}, err
 	}
 
-	if !tokenWorks(token) {
-		return Config{}, fmt.Errorf("token seems to be invalid")
-	}
-
 	return Config{
 		Token: token,
 	}, nil
+}
+
+func askWorkspace(existing Config) (new Config, err error) {
+	// Check whether the existing token already works or not and ask the
+	// user if it already works.
+	if existing.Workspace != "" {
+		var override bool
+		err = survey.Ask([]*survey.Question{{
+			Name: "override",
+			Prompt: &survey.Confirm{
+				Message: "Updating existing workspace. Override it?",
+			}}}, &override,
+		)
+		if err != nil {
+			return Config{}, err
+		}
+		if !override {
+			return existing, nil
+		}
+	}
+
+	clockify := NewClockify(existing.Token, nil)
+	workspaces, err := clockify.Workspaces()
+	if err != nil {
+		return Config{}, fmt.Errorf("Failed to list workspaces: %s", err)
+	}
+
+	var workspace string
+	if len(workspaces) > 1 {
+		workspace, err = selectWorkspace(workspaces)
+		if err != nil {
+			return Config{}, fmt.Errorf("Unable to set workspace: %s", err)
+		}
+		existing.Workspace = workspace
+	}
+	return existing, nil
+}
+
+func selectWorkspace(workspaces []Workspace) (string, error) {
+	var workspaceNames []string
+	var workspace string
+	for _, workspace := range workspaces {
+		workspaceNames = append(workspaceNames, workspace.Name)
+	}
+	err := survey.Ask([]*survey.Question{{
+		Name: "workspace",
+		Prompt: &survey.Select{
+			Message: "Select a Workspace:",
+			Options: workspaceNames,
+		}}}, &workspace,
+	)
+
+	if err != nil {
+		return "", err
+	}
+	return workspace, nil
 }
