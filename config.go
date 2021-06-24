@@ -13,7 +13,10 @@ func saveConfig(pathRelativeToHome string, c Config) error {
 		return fmt.Errorf("finding HOME: %s", err)
 	}
 
-	f, err := os.OpenFile(home+"/"+pathRelativeToHome, os.O_WRONLY|os.O_CREATE, 0600)
+	// O_TRUNC allows us to re-write the whole configuration file every time we
+	// save it. Without it, the file would never shrink in size when writing a
+	// shorter configuration manifest, and the YAML manifest would break.
+	f, err := os.OpenFile(home+"/"+pathRelativeToHome, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return fmt.Errorf("opening config '%s': %s", pathRelativeToHome, err)
 	}
@@ -28,7 +31,8 @@ func saveConfig(pathRelativeToHome string, c Config) error {
 }
 
 type Config struct {
-	Token string `yaml:"token"`
+	Token     string `yaml:"token"`
+	Workspace string `yaml:"workspace,omitempty"`
 }
 
 func loadConfig(pathRelativeToHome string) (Config, error) {

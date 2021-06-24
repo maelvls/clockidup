@@ -59,3 +59,51 @@ func askToken(existing Config) (new Config, err error) {
 		Token: token,
 	}, nil
 }
+
+// The existing is the configuration loaded from ~/.config/clockidup.yaml.
+func askWorkspace(existing Config) (new Config, err error) {
+	logutil.Debugf("existing workspace: %s", existing.Workspace)
+	clockify := NewClockify(existing.Token, nil)
+	workspaces, err := clockify.Workspaces()
+	if err != nil {
+		return Config{}, fmt.Errorf("Failed to list workspaces: %s", err)
+	}
+
+	var names []string
+	var selected string
+	for _, w := range workspaces {
+		names = append(names, w.Name)
+	}
+
+	err = survey.AskOne(&survey.Select{
+		Options: names,
+		Default: existing.Workspace,
+		Message: "Choose a workspace",
+	}, &selected)
+	if err != nil {
+		return Config{}, err
+	}
+
+	existing.Workspace = selected
+	return existing, nil
+}
+
+func selectWorkspace(workspaces []Workspace) (string, error) {
+	var workspaceNames []string
+	var workspace string
+	for _, workspace := range workspaces {
+		workspaceNames = append(workspaceNames, workspace.Name)
+	}
+	err := survey.Ask([]*survey.Question{{
+		Name: "workspace",
+		Prompt: &survey.Select{
+			Message: "Select a Workspace:",
+			Options: workspaceNames,
+		}}}, &workspace,
+	)
+
+	if err != nil {
+		return "", err
+	}
+	return workspace, nil
+}

@@ -25,9 +25,10 @@ const (
 )
 
 var (
-	tokenFlag    = flag.String("token", "", "The Clockify API token.")
-	debugFlag    = flag.Bool("debug", false, "Show debug output, including the HTTP requests.")
-	onlyBillable = flag.Bool("billable", false, "Only print the entries that are billable.")
+	debugFlag     = flag.Bool("debug", false, "Show debug output, including the HTTP requests.")
+	onlyBillable  = flag.Bool("billable", false, "Only print the entries that are billable.")
+	tokenFlag     = flag.String("token", "", "The Clockify API token.")
+	workspaceFlag = flag.String("workspace", "", "Workspace Name to use.")
 
 	// The 'version' var is set during build, using something like:
 	//  go build  -ldflags"-X main.version=$(git describe --tags)".
@@ -140,18 +141,20 @@ func main() {
 		logutil.EnableDebug = true
 	}
 
-	err := Run(*tokenFlag, printHelp)
+	err := Run(*tokenFlag, *workspaceFlag, printHelp)
 	if err != nil {
 		logutil.Errorf(err.Error())
 		os.Exit(1)
 	}
 }
 
-func Run(tokenFlag string, printHelp func(bool) func()) error {
+func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) error {
 	conf, err := loadConfig(confPath)
 	if err != nil {
 		return fmt.Errorf("could not load config: %s", err)
 	}
+
+	logutil.Debugf("config loaded from ~/.config/clockidup.yaml: %#s", conf)
 
 	var day time.Time
 	switch flag.Arg(0) {
@@ -161,6 +164,25 @@ func Run(tokenFlag string, printHelp func(bool) func()) error {
 			return fmt.Errorf("login failed: %s", err)
 		}
 		logutil.Infof("you are logged in!")
+
+		conf, err = askWorkspace(conf)
+		if err != nil {
+			return fmt.Errorf("unable to set workspace: %s", err)
+		}
+		logutil.Infof("Set workspace to: %s", conf.Workspace)
+
+		err = saveConfig(confPath, conf)
+		if err != nil {
+			return fmt.Errorf("saving configuration: %s", err)
+		}
+		logutil.Debugf("config: %+v", conf)
+		return nil
+	case "select":
+		conf, err = askWorkspace(conf)
+		if err != nil {
+			return fmt.Errorf("unable to set workspace: %s", err)
+		}
+		logutil.Infof("set workspace to: %s", conf.Workspace)
 
 		err = saveConfig(confPath, conf)
 		if err != nil {
@@ -239,18 +261,31 @@ func Run(tokenFlag string, printHelp func(bool) func()) error {
 		return fmt.Errorf("%s", err)
 	}
 	if len(workspaces) == 0 {
-		return fmt.Errorf("no workspace found")
+		return fmt.Errorf("no workspaces found, check your token and re-login via 'clockeditup login'")
 	}
 
-	workspace := workspaces[0]
+	workspaceName := workspaceFlag
+	if workspaceName == "" {
+		workspaceName = conf.Workspace
+	}
+	if workspaceName == "" {
+		logutil.Errorf("no workspace selected, use 'clockidup select' or verify ' -workspace flag' to set a workspace")
+		os.Exit(1)
+	}
+
+	workspace, workspaceFound := FindWorkspace(workspaces, workspaceName)
+	if !workspaceFound {
+		logutil.Errorf("Unable to find workspace '%s', use 'clockidup select' or verify ' -workspace flag' to set a workspace", workspaceName)
+		os.Exit(1)
+	}
 	userID := workspace.Memberships[0].UserID
 
-	timeEntries, err := clockify.TimeEntries(workspaces[0].ID, userID, start, end)
+	timeEntries, err := clockify.TimeEntries(workspace.ID, userID, start, end)
 	if err != nil {
 		return fmt.Errorf("%s", err)
 	}
 
-	projects, err := clockify.Projects(workspaces[0].ID)
+	projects, err := clockify.Projects(workspace.ID)
 	if err != nil {
 		return fmt.Errorf("%s", err)
 	}
