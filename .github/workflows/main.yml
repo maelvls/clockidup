@@ -11,15 +11,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v1
         with:
-          go-version: 1.15.x
+          go-version: 1.16.x
       - run: go vet ./...
       - run: go test ./...
-
-      # Only store binaries to Github Releases on tag.
-      - uses: goreleaser/goreleaser-action@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          version: latest
-          args: release --rm-dist --config .github/goreleaser.yml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
