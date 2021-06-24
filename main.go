@@ -47,6 +47,7 @@ clockidup helps you generating your standup entry using the time entries from
 
     clockidup login
     clockidup [--billable] {{ url "DAY" }}
+    clockidup select
     clockidup version
 
 where {{ url "DAY" }} is of the form:
@@ -64,6 +65,10 @@ where {{ url "DAY" }} is of the form:
 To start, log in:
 
     {{ cmd "clockidup login" }}
+
+Note that you can at any time change the Clockify workspace:
+
+    {{ cmd "clockidup select" }}
 
 Each "project" in Clockify will show up as a prefix of your time entries. For
 example, imagining that you have an entry that you created with clockify-cli:
