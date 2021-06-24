@@ -17,8 +17,9 @@ jobs:
 
       # Only store binaries to Github Releases on tag. The release process looks
       # like this:
-      #  1. Create and push a tag "0.5.0" either using git or using the GitHub
-      #     Release UI.
+      #  1. Create and push a tag "v0.5.0". Unfortunately, that can't be done
+      #     using the GitHub Release UI, it must be done through the
+      #     command-line.
       #  2. A draft GitHub Release is created. Since it is a draft, the
       #     subscribers to the clockidup GitHub Releases are not told that there
       #     is a new release yet.
