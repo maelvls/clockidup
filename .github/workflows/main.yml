@@ -14,3 +14,22 @@ jobs:
           go-version: 1.16.x
       - run: go vet ./...
       - run: go test ./...
+
+      # Only store binaries to Github Releases on tag. The release process looks
+      # like this:
+      #  1. Create and push a tag "0.5.0" either using git or using the GitHub
+      #     Release UI.
+      #  2. A draft GitHub Release is created. Since it is a draft, the
+      #     subscribers to the clockidup GitHub Releases are not told that there
+      #     is a new release yet.
+      #  3. Add the release notes inside the description of the GitHub Release
+      #     draft.
+      #  4. Click "Publish". This time, subscribers receive a notification by
+      #     email.
+      - uses: docker://goreleaser/goreleaser
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          version: latest
+          args: release --rm-dist --config .github/goreleaser.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
