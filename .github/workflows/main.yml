@@ -27,7 +27,7 @@ jobs:
       #     draft.
       #  4. Click "Publish". This time, subscribers receive a notification by
       #     email.
-      - uses: docker://goreleaser/goreleaser
+      - uses: goreleaser/goreleaser-action@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           version: latest
