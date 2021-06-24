@@ -27,7 +27,6 @@ jobs:
       #     draft.
       #  4. Click "Publish". This time, subscribers receive a notification by
       #     email.
-
       - id: git_info
         if: startsWith(github.ref, 'refs/tags/')
         run: echo ::set-output name=tag::"$(echo ${{ github.ref }} | sed s@refs/tags/@@)"
@@ -39,15 +38,18 @@ jobs:
           CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o build/clockidup-darwin-amd64 -ldflags="-X main.version=$VERSION" .
           CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o build/clockidup-darwin-arm64 -ldflags="-X main.version=$VERSION" .
           (cd build; sha256sum * | tee checksums.txt)
-          echo ::set-output name=files::"$(find build/ -type f)"
+          echo ::set-output name=files::"$(find build/ -type f | sed -z 's/\n/%0A/g')"
+        # The ::set-output mangles newlines, so we need to convert newlines into
+        # %0A, which GitHub Actions then decodes when the variable is used.
+        # https://github.community/t/set-output-truncates-multiline-strings/16852
+        # https://unix.stackexchange.com/questions/114943/can-sed-replace-new-line-characters
         env:
           VERSION: ${{ steps.git_info.outputs.tag }}
 
       - if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            ${{ steps.build.outputs.files }}
+          files: ${{ steps.build.outputs.files }}
           draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
