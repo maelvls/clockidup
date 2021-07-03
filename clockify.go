@@ -136,8 +136,9 @@ func (c *Clockify) Workspaces() ([]Workspace, error) {
 }
 
 func FindWorkspace(workspaces []Workspace, name string) (Workspace, bool) {
-	// If no workspace is selected or name provided, we return that it is not found
-	// You must now select a workspace during login or via the select subcommand
+	// If no workspace is selected or name provided, we return that it is not
+	// found You must now select a workspace during login or via the select
+	// subcommand.
 	if name == "" {
 		return Workspace{}, false
 	}
@@ -221,7 +222,7 @@ func (c *Clockify) Projects(workspaceID string) ([]Project, error) {
 	case 200:
 		// continue below
 	default:
-		return nil, fmt.Errorf("unxpected HTTP status code %d for GET %s: %s", httpResp.StatusCode, path, bytes)
+		return nil, fmt.Errorf("unexpected HTTP status code %d for GET %s: %s", httpResp.StatusCode, path, bytes)
 	}
 
 	var projects []Project

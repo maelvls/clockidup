@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"testing"
@@ -14,95 +13,138 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var record = os.Getenv("RECORD") != ""
+
 func TestClockify_Workspaces(t *testing.T) {
-	withLiveSlack := os.Getenv("LIVE") != ""
-	token := "redacted-token"
+	tr := withReplayTransport(t)
+
+	t.Run("when authenticated", func(t *testing.T) {
+		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+
+		got, gotErr := clockify.Workspaces()
+
+		require.NoError(t, gotErr)
+		assert.Equal(t, []Workspace{
+			workspaceWith("workspace-1", "60e086c24f27a949c058082e", "60e086c24f27a949c058082d"),
+			workspaceWith("workspace-2", "60e08781bf81bd307230c097", "60e086c24f27a949c058082d"),
+		}, got)
+	})
+
+	t.Run("when not authenticated", func(t *testing.T) {
+		clockify := NewClockify("invalid-token", &http.Client{Transport: tr})
+
+		got, gotErr := clockify.Workspaces()
+
+		assert.Equal(t, []Workspace(nil), got)
+		require.EqualError(t, gotErr, "Full authentication is required to access this resource")
+	})
+}
+
+func TestFindWorkspace(t *testing.T) {
+	tests := map[string]struct {
+		givenWorkspaces []Workspace
+		givenName       string
+		want            Workspace
+		wantFound       bool
+	}{
+		"workspace exists": {
+			givenWorkspaces: []Workspace{
+				workspaceWith("workspace-1", "60e086c24f27a949c058082e", "60e086c24f27a949c058082d"),
+				workspaceWith("workspace-2", "60e08781bf81bd307230c097", "60e086c24f27a949c058082d"),
+			},
+			givenName: "workspace-2",
+			wantFound: true,
+			want:      workspaceWith("workspace-2", "60e08781bf81bd307230c097", "60e086c24f27a949c058082d"),
+		},
+		"workspace does not exist": {
+			givenWorkspaces: []Workspace{
+				workspaceWith("workspace-1", "60e086c24f27a949c058082e", "60e086c24f27a949c058082d"),
+				workspaceWith("workspace-2", "60e08781bf81bd307230c097", "60e086c24f27a949c058082d"),
+			},
+			givenName: "workspace-3",
+			wantFound: false,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, gotFound := FindWorkspace(tt.givenWorkspaces, tt.givenName)
+			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.wantFound, gotFound)
+		})
+	}
+}
+
+func workspaceWith(name, id, uid string) Workspace {
+	return Workspace{
+		ID:         id,
+		Name:       name,
+		HourlyRate: HourlyRate{Currency: "USD"},
+		Memberships: []Memberships{{
+			UserID:           uid,
+			TargetID:         id,
+			MembershipType:   "WORKSPACE",
+			MembershipStatus: "ACTIVE",
+		}},
+		WorkspaceSettings: WorkspaceSettings{
+			OnlyAdminsSeeBillableRates: true,
+			OnlyAdminsCreateProject:    true,
+			DefaultBillableProjects:    true,
+			Round:                      Round{Round: "Round to nearest", Minutes: "15"},
+			ProjectFavorites:           true,
+			CanSeeTracker:              true,
+			TrackTimeDownToSecond:      true,
+			ProjectGroupingLabel:       "client",
+			AdminOnlyPages:             []interface{}{},
+			TimeTrackingMode:           "DEFAULT",
+			IsProjectPublicByDefault:   true},
+		ImageURL: "",
+	}
+}
+
+func withToken(t *testing.T) (token string) {
+	if record {
+		return MustGetenv(t, "CLOCKIFY_TOKEN")
+	}
+	return "redacted-token"
+}
+
+// Must only be created once.
+func withReplayTransport(t *testing.T) *recorder.Recorder {
 	mode := recorder.ModeReplaying
-	if withLiveSlack {
-		token = MustGetenv("CLOCKIFY_TOKEN")
+	if record {
 		mode = recorder.ModeRecording
 	}
 
 	rec, err := recorder.NewAsMode("fixtures/clockify", mode, http.DefaultTransport)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func() {
+	assert.NoError(t, err)
+	t.Cleanup(func() {
 		_ = rec.Stop()
-	}()
+	})
 
+	// The response's token is only filtered in recording mode (RECORD=1). The
+	// filter does nothing in replay mode.
 	rec.AddFilter(func(i *cassette.Interaction) error {
-		i.Request.Body = RedactJSON(i.Request.Body, "userId", "fake-user-id", "id", "fake-id", "targetId", "fake-target-id")
-		i.Response.Body = RedactJSON(i.Response.Body, "userId", "fake-user-id", "id", "fake-id", "targetId", "fake-target-id")
-		if i.Request.Headers.Get("X-Api-Key") != "" {
+		if i.Request.Headers.Get("X-Api-Key") == withToken(t) {
 			i.Request.Headers.Set("X-Api-Key", "redacted-token")
 		}
 		return nil
 	})
 
-	t.Run("when authentified", func(t *testing.T) {
-		clockify := NewClockify(token, &http.Client{Transport: rec})
-		got, gotErr := clockify.Workspaces()
-		require.NoError(t, gotErr)
-		assert.Equal(t, []Workspace{{
-			ID:   "fake-id",
-			Name: "Maël Valais's workspace",
-			HourlyRate: HourlyRate{Amount: 0,
-				Currency: "USD"},
-			Memberships: []Memberships{{UserID: "fake-user-id",
-				HourlyRate:       interface{}(nil),
-				CostRate:         interface{}(nil),
-				TargetID:         "fake-target-id",
-				MembershipType:   "WORKSPACE",
-				MembershipStatus: "ACTIVE"}},
-			WorkspaceSettings: WorkspaceSettings{TimeRoundingInReports: false,
-				OnlyAdminsSeeBillableRates: true,
-				OnlyAdminsCreateProject:    true,
-				OnlyAdminsSeeDashboard:     false,
-				DefaultBillableProjects:    true,
-				LockTimeEntries:            interface{}(nil),
-				Round: Round{Round: "Round to nearest",
-					Minutes: "15"},
-				ProjectFavorites:                   true,
-				CanSeeTimeSheet:                    false,
-				CanSeeTracker:                      true,
-				ProjectPickerSpecialFilter:         false,
-				ForceProjects:                      false,
-				ForceTasks:                         false,
-				ForceTags:                          false,
-				ForceDescription:                   false,
-				OnlyAdminsSeeAllTimeEntries:        false,
-				OnlyAdminsSeePublicProjectsEntries: false,
-				TrackTimeDownToSecond:              true,
-				ProjectGroupingLabel:               "client",
-				AdminOnlyPages:                     []interface{}{},
-				AutomaticLock:                      interface{}(nil),
-				OnlyAdminsCreateTag:                false,
-				OnlyAdminsCreateTask:               false,
-				TimeTrackingMode:                   "DEFAULT",
-				IsProjectPublicByDefault:           true},
-			ImageURL:                "",
-			FeatureSubscriptionType: interface{}(nil)}},
-			got)
-	})
-
-	t.Run("when not authentified", func(t *testing.T) {
-		clockify := NewClockify("wrong-token", &http.Client{Transport: rec})
-		got, gotErr := clockify.Workspaces()
-
-		require.EqualError(t, gotErr, "Full authentication is required to access this resource")
-		assert.Equal(t, []Workspace(nil), got)
-	})
+	return rec
 }
 
-func MustGetenv(v string) string {
+func MustGetenv(t *testing.T, v string) string {
 	res := os.Getenv(v)
 	if res == "" {
-		panic(fmt.Errorf("The env var %s is not set or is empty. Did you forget to 'source .envrc'?", v))
+		t.Errorf("The env var %s is not set or is empty. Did you forget to 'export %s=value' or to add it to your '.envrc'?", v, v)
+		t.FailNow()
 	}
 	return res
 }
 
+// For example:
+//   req.Body = RedactJSON(req.Body, "userId", "fake-user-id", "id", "fake-id", "targetId", "fake-target-id")
+//   resp.Body = RedactJSON(resp.Body, "userId", "fake-user-id", "id", "fake-id", "targetId", "fake-target-id")
 func RedactJSON(body string, replaceKeyWith ...string) string {
 	replaceMap := make(map[string]string)
 	for i := 0; i < len(replaceKeyWith)-1; i = i + 2 {

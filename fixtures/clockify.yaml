@@ -10,50 +10,34 @@ interactions:
     url: https://api.clockify.me/api/v1/workspaces
     method: GET
   response:
-    body: '[{"featureSubscriptionType":null,"hourlyRate":{"amount":0,"currency":"USD"},"id":"fake-id","imageUrl":"","memberships":[{"costRate":null,"hourlyRate":null,"membershipStatus":"ACTIVE","membershipType":"WORKSPACE","targetId":"fake-target-id","userId":"fake-user-id"}],"name":"Maël
-      Valais''s workspace","workspaceSettings":{"adminOnlyPages":[],"automaticLock":null,"canSeeTimeSheet":false,"canSeeTracker":true,"defaultBillableProjects":true,"forceDescription":false,"forceProjects":false,"forceTags":false,"forceTasks":false,"isProjectPublicByDefault":true,"lockTimeEntries":null,"onlyAdminsCreateProject":true,"onlyAdminsCreateTag":false,"onlyAdminsCreateTask":false,"onlyAdminsSeeAllTimeEntries":false,"onlyAdminsSeeBillableRates":true,"onlyAdminsSeeDashboard":false,"onlyAdminsSeePublicProjectsEntries":false,"projectFavorites":true,"projectGroupingLabel":"client","projectPickerSpecialFilter":false,"round":{"minutes":"15","round":"Round
-      to nearest"},"timeRoundingInReports":false,"timeTrackingMode":"DEFAULT","trackTimeDownToSecond":true}}]'
+    body: '[{"id":"60e086c24f27a949c058082e","name":"workspace-1","hourlyRate":{"amount":0,"currency":"USD"},"memberships":[{"userId":"60e086c24f27a949c058082d","hourlyRate":null,"costRate":null,"targetId":"60e086c24f27a949c058082e","membershipType":"WORKSPACE","membershipStatus":"ACTIVE"}],"workspaceSettings":{"timeRoundingInReports":false,"onlyAdminsSeeBillableRates":true,"onlyAdminsCreateProject":true,"onlyAdminsSeeDashboard":false,"defaultBillableProjects":true,"lockTimeEntries":null,"round":{"round":"Round
+      to nearest","minutes":"15"},"projectFavorites":true,"canSeeTimeSheet":false,"canSeeTracker":true,"projectPickerSpecialFilter":false,"forceProjects":false,"forceTasks":false,"forceTags":false,"forceDescription":false,"onlyAdminsSeeAllTimeEntries":false,"onlyAdminsSeePublicProjectsEntries":false,"trackTimeDownToSecond":true,"projectGroupingLabel":"client","adminOnlyPages":[],"automaticLock":null,"onlyAdminsCreateTag":false,"onlyAdminsCreateTask":false,"timeTrackingMode":"DEFAULT","isProjectPublicByDefault":true},"imageUrl":"","featureSubscriptionType":null},{"id":"60e08781bf81bd307230c097","name":"workspace-2","hourlyRate":{"amount":0,"currency":"USD"},"memberships":[{"userId":"60e086c24f27a949c058082d","hourlyRate":null,"costRate":null,"targetId":"60e08781bf81bd307230c097","membershipType":"WORKSPACE","membershipStatus":"ACTIVE"}],"workspaceSettings":{"timeRoundingInReports":false,"onlyAdminsSeeBillableRates":true,"onlyAdminsCreateProject":true,"onlyAdminsSeeDashboard":false,"defaultBillableProjects":true,"lockTimeEntries":null,"round":{"round":"Round
+      to nearest","minutes":"15"},"projectFavorites":true,"canSeeTimeSheet":false,"canSeeTracker":true,"projectPickerSpecialFilter":false,"forceProjects":false,"forceTasks":false,"forceTags":false,"forceDescription":false,"onlyAdminsSeeAllTimeEntries":false,"onlyAdminsSeePublicProjectsEntries":false,"trackTimeDownToSecond":true,"projectGroupingLabel":"client","adminOnlyPages":[],"automaticLock":null,"onlyAdminsCreateTag":false,"onlyAdminsCreateTask":false,"timeTrackingMode":"DEFAULT","isProjectPublicByDefault":true},"imageUrl":"","featureSubscriptionType":null}]'
     headers:
-      Access-Control-Allow-Credentials:
-      - "true"
-      Access-Control-Allow-Headers:
-      - Content-Type, X-Auth-Token, X-Api-Key, X-Auth-Checksum, Authorization, Ignore-Synchronization,
-        Socket-Connection-ID, App-Name, App-Version, Sub-Domain-Name
-      Access-Control-Allow-Methods:
-      - POST, GET, PUT, OPTIONS, DELETE, HEAD, PATCH
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - X-Authorization-Url, X-Auth-Checksum, Expected-Client-Version, App-Name, App-Version,
-        Sub-Domain-Name
-      Access-Control-Max-Age:
-      - "3600"
       Cache-Control:
       - no-cache, no-store, max-age=0, must-revalidate
+      Content-Length:
+      - "2135"
       Content-Type:
-      - application/json;charset=UTF-8
+      - application/json
       Date:
-      - Sun, 31 Jan 2021 15:41:44 GMT
+      - Sat, 03 Jul 2021 17:08:44 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:
       - "0"
       Pragma:
       - no-cache
-      Server:
-      - nginx
       Vary:
-      - Accept-Encoding
-      X-Application-Context:
-      - application:file.S3,payment.stripe,newsletter,email.mandrill,logstash,default,prod
+      - Origin
+      - Access-Control-Request-Method
+      - Access-Control-Request-Headers
       X-Auth-Checksum:
-      - f3be8ab1a64c487a1f5e83013714f138f6b2f6d429d38c15cf97d364e7afc325
+      - d771e09a3642faa1d641e6b966e62ca7f3817685dc7e09feb84bc7bc69f85f5e
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - DENY
-      X-Host:
-      - api.clockify.me
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -64,27 +48,12 @@ interactions:
     form: {}
     headers:
       X-Api-Key:
-      - redacted-token
+      - invalid-token
     url: https://api.clockify.me/api/v1/workspaces
     method: GET
   response:
-    body: '{"code":1000,"message":"Full authentication is required to access this
-      resource"}'
+    body: '{"message":"Full authentication is required to access this resource","code":1000}'
     headers:
-      Access-Control-Allow-Credentials:
-      - "true"
-      Access-Control-Allow-Headers:
-      - Content-Type, X-Auth-Token, X-Api-Key, X-Auth-Checksum, Authorization, Ignore-Synchronization,
-        Socket-Connection-ID, App-Name, App-Version, Sub-Domain-Name
-      Access-Control-Allow-Methods:
-      - POST, GET, PUT, OPTIONS, DELETE, HEAD, PATCH
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - X-Authorization-Url, X-Auth-Checksum, Expected-Client-Version, App-Name, App-Version,
-        Sub-Domain-Name
-      Access-Control-Max-Age:
-      - "3600"
       Cache-Control:
       - no-cache, no-store, max-age=0, must-revalidate
       Content-Length:
@@ -92,15 +61,17 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Sun, 31 Jan 2021 15:41:44 GMT
+      - Sat, 03 Jul 2021 17:08:44 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:
       - "0"
       Pragma:
       - no-cache
-      Server:
-      - nginx
+      Vary:
+      - Origin
+      - Access-Control-Request-Method
+      - Access-Control-Request-Headers
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
