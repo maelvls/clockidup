@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
@@ -18,7 +21,7 @@ var record = os.Getenv("RECORD") != ""
 func TestClockify_Workspaces(t *testing.T) {
 	tr := withReplayTransport(t)
 
-	t.Run("when authenticated", func(t *testing.T) {
+	t.Run("two workspaces are returned", func(t *testing.T) {
 		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
 
 		got, gotErr := clockify.Workspaces()
@@ -30,48 +33,14 @@ func TestClockify_Workspaces(t *testing.T) {
 		}, got)
 	})
 
-	t.Run("when not authenticated", func(t *testing.T) {
+	t.Run("unauthenticated", func(t *testing.T) {
 		clockify := NewClockify("invalid-token", &http.Client{Transport: tr})
 
 		got, gotErr := clockify.Workspaces()
 
 		assert.Equal(t, []Workspace(nil), got)
-		require.EqualError(t, gotErr, "Full authentication is required to access this resource")
+		require.EqualError(t, gotErr, "401 Unauthorized: Full authentication is required to access this resource")
 	})
-}
-
-func TestFindWorkspace(t *testing.T) {
-	tests := map[string]struct {
-		givenWorkspaces []Workspace
-		givenName       string
-		want            Workspace
-		wantFound       bool
-	}{
-		"workspace exists": {
-			givenWorkspaces: []Workspace{
-				workspaceWith("workspace-1", "60e086c24f27a949c058082e", "60e086c24f27a949c058082d"),
-				workspaceWith("workspace-2", "60e08781bf81bd307230c097", "60e086c24f27a949c058082d"),
-			},
-			givenName: "workspace-2",
-			wantFound: true,
-			want:      workspaceWith("workspace-2", "60e08781bf81bd307230c097", "60e086c24f27a949c058082d"),
-		},
-		"workspace does not exist": {
-			givenWorkspaces: []Workspace{
-				workspaceWith("workspace-1", "60e086c24f27a949c058082e", "60e086c24f27a949c058082d"),
-				workspaceWith("workspace-2", "60e08781bf81bd307230c097", "60e086c24f27a949c058082d"),
-			},
-			givenName: "workspace-3",
-			wantFound: false,
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			got, gotFound := FindWorkspace(tt.givenWorkspaces, tt.givenName)
-			assert.Equal(t, tt.want, got)
-			assert.Equal(t, tt.wantFound, gotFound)
-		})
-	}
 }
 
 func workspaceWith(name, id, uid string) Workspace {
@@ -96,9 +65,253 @@ func workspaceWith(name, id, uid string) Workspace {
 			ProjectGroupingLabel:       "client",
 			AdminOnlyPages:             []interface{}{},
 			TimeTrackingMode:           "DEFAULT",
-			IsProjectPublicByDefault:   true},
+			IsProjectPublicByDefault:   true,
+		},
 		ImageURL: "",
 	}
+}
+
+func TestClockify_Projects(t *testing.T) {
+	tr := withReplayTransport(t)
+
+	t.Run("the requested project id exists", func(t *testing.T) {
+		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+
+		got, gotErr := clockify.Projects("60e086c24f27a949c058082e") // "workspace-1"
+
+		require.NoError(t, gotErr)
+		assert.Equal(t, []Project{{
+			ID:          "60e0a9cf5f596c5a7d10d821",
+			Name:        "project-1",
+			HourlyRate:  HourlyRate{Amount: 0, Currency: "USD"},
+			ClientID:    "",
+			WorkspaceID: "60e086c24f27a949c058082e",
+			Billable:    true,
+			Memberships: []Memberships{{
+				UserID:           "60e086c24f27a949c058082d",
+				HourlyRate:       interface{}(nil),
+				CostRate:         interface{}(nil),
+				TargetID:         "60e0a9cf5f596c5a7d10d821",
+				MembershipType:   "PROJECT",
+				MembershipStatus: "ACTIVE",
+			}},
+			Color:      "#795548",
+			Archived:   false,
+			Duration:   "PT1H",
+			ClientName: "",
+			Note:       "",
+			CostRate:   interface{}(nil),
+			TimeEstimate: ProjectTimeEstimate{
+				Estimate: "PT0S",
+				Type:     "AUTO",
+				Active:   false,
+			},
+			Public:   true,
+			Template: false,
+		}}, got)
+	})
+
+	t.Run("the requested project id does not exist", func(t *testing.T) {
+		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+
+		got, gotErr := clockify.Projects("some-dummy-id")
+
+		require.EqualError(t, gotErr, "403 Forbidden (empty response body)")
+		assert.Equal(t, []Project(nil), got)
+	})
+
+	t.Run("empty project id", func(t *testing.T) {
+		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+
+		got, gotErr := clockify.Projects("")
+
+		require.Equal(t, ErrEmptyWorkspaceID, gotErr)
+		assert.Equal(t, []Project(nil), got)
+	})
+}
+
+func TestClockify_Task(t *testing.T) {
+	tr := withReplayTransport(t)
+
+	t.Run("the requested task id exists", func(t *testing.T) {
+		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+
+		got, gotErr := clockify.Task(
+			"60e086c24f27a949c058082e", // "workspace-1"
+			"60e0a9cf5f596c5a7d10d821", // "project-1"
+			"60e0a9f00afa073620eade56", // "task-1"
+		)
+
+		require.NoError(t, gotErr)
+		assert.Equal(t, Task{
+			ID:          "60e0a9f00afa073620eade56",
+			Name:        "task-1",
+			ProjectID:   "60e0a9cf5f596c5a7d10d821",
+			AssigneeIds: []string{},
+			Estimate:    "PT0S",
+			Status:      "ACTIVE",
+			Duration:    "PT0S",
+		}, got)
+	})
+
+	t.Run("the requested task id does not exist", func(t *testing.T) {
+		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+
+		got, gotErr := clockify.Task(
+			"60e086c24f27a949c058082e", // "workspace-1"
+			"60e0a9cf5f596c5a7d10d821", // "project-1"
+			"dummy",
+		)
+
+		require.EqualError(t, gotErr, "404 Not Found: TASK with ID 'dummy' not found.")
+		assert.Equal(t, Task{}, got)
+	})
+
+	t.Run("empty workspace id", func(t *testing.T) {
+		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+
+		got, gotErr := clockify.Task("", "60e0a9cf5f596c5a7d10d821", "60e0a9f00afa073620eade56")
+
+		require.Equal(t, ErrEmptyWorkspaceID, gotErr)
+		assert.Equal(t, Task{}, got)
+	})
+
+	t.Run("empty project id", func(t *testing.T) {
+		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+
+		got, gotErr := clockify.Task("60e086c24f27a949c058082e", "", "60e0a9f00afa073620eade56")
+
+		require.Equal(t, ErrEmptyProjectID, gotErr)
+		assert.Equal(t, Task{}, got)
+	})
+
+	t.Run("empty task id", func(t *testing.T) {
+		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+
+		got, gotErr := clockify.Task("60e086c24f27a949c058082e", "60e0a9cf5f596c5a7d10d821", "")
+
+		require.Equal(t, ErrEmptyTaskID, gotErr)
+		assert.Equal(t, Task{}, got)
+	})
+}
+
+func TestClockify_TimeEntries(t *testing.T) {
+	tr := withReplayTransport(t)
+
+	t.Run("the requested workspace and user exist", func(t *testing.T) {
+		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+
+		got, gotErr := clockify.TimeEntries(
+			"60e086c24f27a949c058082e", // "workspace-1"
+			"60e086c24f27a949c058082d", // "user-1"
+			mustParse("2021-07-03 00:00:00"),
+			mustParse("2021-07-03 23:59:00"),
+		)
+
+		require.NoError(t, gotErr)
+		assert.Equal(t, []TimeEntry([]TimeEntry{{
+			ID:          "60e0ccf4909afe51901a154c",
+			Description: "Work with no project",
+			TagIds:      []interface{}{},
+			UserID:      "60e086c24f27a949c058082d",
+			Billable:    false,
+			TaskID:      "",
+			ProjectID:   "",
+			TimeInterval: TimeInterval{
+				Start:    mustParse("2021-07-03 13:30:00"),
+				End:      mustParse("2021-07-03 14:00:00"),
+				Duration: "PT30M",
+			},
+			WorkspaceID:       "60e086c24f27a949c058082e",
+			IsLocked:          false,
+			CustomFieldValues: interface{}(nil),
+		}, {
+			ID:          "60e0cccf909afe51901a151c",
+			Description: "Some work with project but no task",
+			TagIds:      []interface{}{},
+			UserID:      "60e086c24f27a949c058082d",
+			Billable:    true,
+			TaskID:      "",
+			ProjectID:   "60e0a9cf5f596c5a7d10d821",
+			TimeInterval: TimeInterval{
+				Start:    mustParse("2021-07-03 13:00:00"),
+				End:      mustParse("2021-07-03 13:30:00"),
+				Duration: "PT30M",
+			},
+			WorkspaceID:       "60e086c24f27a949c058082e",
+			IsLocked:          false,
+			CustomFieldValues: interface{}(nil),
+		}, {
+			ID:          "60e0ccbc4f27a949c058498b",
+			Description: "Unit-test of clockidup, work with project and task",
+			TagIds:      []interface{}{},
+			UserID:      "60e086c24f27a949c058082d",
+			Billable:    true,
+			TaskID:      "60e0a9f00afa073620eade56",
+			ProjectID:   "60e0a9cf5f596c5a7d10d821",
+			TimeInterval: TimeInterval{
+				Start:    mustParse("2021-07-03 12:30:00"),
+				End:      mustParse("2021-07-03 13:00:00"),
+				Duration: "PT30M",
+			},
+			WorkspaceID:       "60e086c24f27a949c058082e",
+			IsLocked:          false,
+			CustomFieldValues: interface{}(nil),
+		}}), got)
+	})
+	t.Run("the requested workspace does not exist", func(t *testing.T) {
+		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+
+		got, gotErr := clockify.TimeEntries(
+			"dummy-workspace",
+			"60e086c24f27a949c058082d", // "user-1"
+			mustParse("2021-07-03 00:00:00"),
+			mustParse("2021-07-03 23:59:00"),
+		)
+
+		require.EqualError(t, gotErr, "403 Forbidden (empty response body)")
+		assert.Equal(t, []TimeEntry(nil), got)
+	})
+	t.Run("the requested user does not exist", func(t *testing.T) {
+		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+
+		got, gotErr := clockify.TimeEntries(
+			"60e086c24f27a949c058082e", // "workspace-1"
+			"dummy-user-id",
+			mustParse("2021-07-03 00:00:00"),
+			mustParse("2021-07-03 23:59:00"),
+		)
+
+		require.EqualError(t, gotErr, "404 Not Found: USER with ID 'dummy-user-id' not found.")
+		assert.Equal(t, []TimeEntry(nil), got)
+	})
+	t.Run("the requested workspace is empty", func(t *testing.T) {
+		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+
+		got, gotErr := clockify.TimeEntries(
+			"",
+			"60e086c24f27a949c058082d",
+			mustParse("2021-07-03 00:00:00"),
+			mustParse("2021-07-03 23:59:00"),
+		)
+
+		require.Equal(t, gotErr, ErrEmptyWorkspaceID)
+		assert.Equal(t, []TimeEntry(nil), got)
+	})
+	t.Run("the requested user is empty", func(t *testing.T) {
+		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+
+		got, gotErr := clockify.TimeEntries(
+			"60e086c24f27a949c058082e", // "workspace-1"
+			"",
+			mustParse("2021-07-03 00:00:00"),
+			mustParse("2021-07-03 23:59:00"),
+		)
+
+		require.Equal(t, gotErr, ErrEmptyUserID)
+		assert.Equal(t, []TimeEntry(nil), got)
+	})
+
 }
 
 func withToken(t *testing.T) (token string) {
@@ -108,14 +321,13 @@ func withToken(t *testing.T) (token string) {
 	return "redacted-token"
 }
 
-// Must only be created once.
 func withReplayTransport(t *testing.T) *recorder.Recorder {
 	mode := recorder.ModeReplaying
 	if record {
 		mode = recorder.ModeRecording
 	}
 
-	rec, err := recorder.NewAsMode("fixtures/clockify", mode, http.DefaultTransport)
+	rec, err := recorder.NewAsMode("fixtures/"+strings.ToLower(callerFnName()), mode, http.DefaultTransport)
 	assert.NoError(t, err)
 	t.Cleanup(func() {
 		_ = rec.Stop()
@@ -205,4 +417,24 @@ func redactObject(replaceMap map[string]string, data *map[string]interface{}) {
 			(*data)[k] = redactValue(replaceMap, &v)
 		}
 	}
+}
+
+func callerFnName() string {
+	pc, _, _, _ := runtime.Caller(2)
+	parts := strings.Split(runtime.FuncForPC(pc).Name(), ".")
+	n := len(parts)
+	funcName := parts[n-1]
+	if parts[n-2][0] == '(' {
+		funcName = parts[n-2] + "." + funcName
+	}
+	return funcName
+}
+
+// Of the form "2006-01-02 15:04:05".
+func mustParse(s string) time.Time {
+	t, err := time.Parse("2006-01-02 15:04:05", s)
+	if err != nil {
+		panic(err)
+	}
+	return t
 }

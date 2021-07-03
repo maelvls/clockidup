@@ -31,7 +31,7 @@ var (
 	workspaceFlag = flag.String("workspace", "", "Workspace Name to use.")
 
 	// The 'version' var is set during build, using something like:
-	//  go build  -ldflags"-X main.version=$(git describe --tags)".
+	//  go build  -ldflags "-X main.version=$(git describe --tags)".
 	// Note: "version", is set automatically by goreleaser.
 	version = ""
 )
@@ -256,19 +256,6 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		os.Exit(1)
 	}
 
-	start := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, day.Location())
-	end := time.Date(day.Year(), day.Month(), day.Day(), 23, 59, 59, 0, day.Location())
-
-	clockify := NewClockify(token, http.DefaultClient)
-
-	workspaces, err := clockify.Workspaces()
-	if err != nil {
-		return fmt.Errorf("%s", err)
-	}
-	if len(workspaces) == 0 {
-		return fmt.Errorf("no workspaces found, check your token and re-login via 'clockeditup login'")
-	}
-
 	workspaceName := workspaceFlag
 	if workspaceName == "" {
 		workspaceName = conf.Workspace
@@ -278,110 +265,20 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		os.Exit(1)
 	}
 
-	workspace, workspaceFound := FindWorkspace(workspaces, workspaceName)
-	if !workspaceFound {
-		logutil.Errorf("Unable to find workspace '%s', use 'clockidup select' or verify ' -workspace flag' to set a workspace", workspaceName)
-		os.Exit(1)
-	}
-	userID := workspace.Memberships[0].UserID
+	clockify := NewClockify(token, http.DefaultClient)
 
-	timeEntries, err := clockify.TimeEntries(workspace.ID, userID, start, end)
+	mergedEntries, err := MergeEntriesFor(clockify, workspaceName, day)
 	if err != nil {
-		return fmt.Errorf("%s", err)
+		return fmt.Errorf("while merging entries: %w", err)
 	}
 
-	projects, err := clockify.Projects(workspace.ID)
-	if err != nil {
-		return fmt.Errorf("%s", err)
-	}
-	projectMap := make(map[string]*Project)
-	for i := range projects {
-		proj := &projects[i]
-		projectMap[proj.ID] = proj
-	}
-
-	// Find the corresponding task when the taskId is set.
-	for i := range timeEntries {
-		entry := &timeEntries[i]
-		if entry.TaskID == "" {
-			continue
-		}
-		task, err := clockify.Task(entry.WorkspaceID, entry.ProjectID, entry.TaskID)
-		if err != nil {
-			return fmt.Errorf("while fetching task for time entry '%s: %s': %s", projectMap[entry.ProjectID].Name, entry.Description, err)
-		}
-		entry.Description = task.Name + ": " + entry.Description
-	}
-
-	// When onlyBillable is enabled, we leave out the non-billable entries.
-	selectBillable := func(entries []TimeEntry) []TimeEntry {
-		var selected []TimeEntry
-		for _, entry := range entries {
-			if entry.Billable {
-				selected = append(selected, entry)
-			}
-		}
-		return selected
-	}
-	if *onlyBillable {
-		timeEntries = selectBillable(timeEntries)
-	}
-
-	// Deduplicate activities: when two activities have the same
-	// description, I merge them by summing up their duration. The key of
-	// the entriesSeen map is the description string.
-	type MergedEntry struct {
-		Project     string
-		Description string
-		Task        string
-		Duration    time.Duration
-		Billable    bool
-	}
-	entriesSeen := make(map[string]*MergedEntry)
-	var mergedEntries []*MergedEntry
-	for _, entry := range timeEntries {
-		existing, found := entriesSeen[entry.Description]
-		if found && !entry.TimeInterval.End.IsZero() {
-			existing.Duration += entry.TimeInterval.End.Sub(entry.TimeInterval.Start)
-			continue
-		}
-
-		projectName := "no-project"
-		if entry.ProjectID != "" {
-			projectName = projectMap[entry.ProjectID].Name
-		}
-
-		// When the time entry is still "ticking" i.e., the user has not
-		// stopped the timer yet, the "end" date is null. In this case, we
-		// still want to have an estimation of how long this entry has been
-		// going on for.
-		duration := entry.TimeInterval.End.Sub(entry.TimeInterval.Start)
-		if entry.TimeInterval.End.IsZero() {
-			duration = time.Now().UTC().Sub(entry.TimeInterval.Start)
-		}
-		new := MergedEntry{
-			Project:     projectName,
-			Description: entry.Description,
-			Duration:    duration,
-		}
-		mergedEntries = append(mergedEntries, &new)
-		entriesSeen[entry.Description] = &new
-	}
-
-	// Print the current day e.g., "Monday" if the date is within a week in
-	// the past; otherwise, print "2021-01-28".
-	if day.After(time.Now().AddDate(0, 0, -6)) {
-		fmt.Printf("%s:\n", day.Format("Monday"))
-	} else {
-		fmt.Printf("%s:\n", day.Format("2006-01-02"))
-	}
 	for i := range mergedEntries {
 		entry := mergedEntries[len(mergedEntries)-i-1]
 
 		// The format "%.1f" (precision = 1) rounds the 2nd digit after the
-		// decimal to the closest neightbor. We also remove the leading
-		// zero to distinguish "small" amounts (e.g. 0.5) from larger
-		// amounts (e.g. 2.0). For example:
+		// decimal to the closest neighbor. We also remove the leading zero to
+		// distinguish "small" amounts (e.g. 0.5) from larger amounts (e.g.
+		// 2.0). For example:
 		//
 		//  0.55 becomes ".5"
 		//  0.56 becomes ".6"
@@ -442,4 +339,162 @@ func versionUsingGo() (string, error) {
 	}
 
 	return m[0][1], nil
+}
+
+func findWorkspace(workspaces []Workspace, name string) (Workspace, bool) {
+	// If no workspace is selected or name provided, we return that it is not
+	// found You must now select a workspace during login or via the select
+	// subcommand.
+	if name == "" {
+		return Workspace{}, false
+	}
+
+	for _, workspace := range workspaces {
+		if workspace.Name == name {
+			return workspace, true
+		}
+	}
+
+	return Workspace{}, false
+}
+
+// MergedEntry is the result of merging time entries that have the same
+// description. The merged entry's duration is the sum of the durations of each
+// activity.
+//
+// For example, given the following time entries:
+//
+//   | Project   | Task   | Description                | Duration |
+//   |-----------|--------|----------------------------|----------|
+//   | project-2 |        | "Review PR"                | 40min    | ← merge 1
+//   | project-1 |        | "Standup"                  | 30h      |
+//   | project-1 |task-1  | "Implement user login"     | 30min    |
+//   | project-2 |        | "Review PR"                | 10min    | ← merge 1
+//   | project-1 |task-1  | "Deal with unit-testing"   | 30min    | ← merge 2
+//   | project-1 |        | "Project meeting"          | 1h       |
+//   | project-1 |task-1  | "Deal with unit-testing"   | 1h30     | ← merge 2
+//
+// then the "merged entries" are:
+//
+//   | Merged description                            | Summed duration |
+//   |-----------------------------------------------|-----------------|
+//   | "project-1: Standup"                          | 30h             |
+//   | "project-1: task-1: Implement user login"     | 30min           |
+//   | "project-2: Review PR"                        | 50min           |
+//   | "project-1: Project meeting"                  | 1h              |
+//   | "project-1: task-1: Deal with unit-testing"   | 2h              |
+//
+// Note that the order of the merged entries corresponds to the order of last
+// appearance of the merged entries.
+type MergedEntry struct {
+	Project     string
+	Description string
+	Task        string
+	Duration    time.Duration
+	Billable    bool
+}
+
+func MergeEntriesFor(clockify *Clockify, workspaceName string, day time.Time) ([]*MergedEntry, error) {
+	start := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, day.Location())
+	end := time.Date(day.Year(), day.Month(), day.Day(), 23, 59, 59, 0, day.Location())
+
+	workspaces, err := clockify.Workspaces()
+	if err != nil {
+		return nil, fmt.Errorf("%s", err)
+	}
+	if len(workspaces) == 0 {
+		return nil, fmt.Errorf("no workspaces found, check your token and re-login via 'clockidup login'")
+	}
+
+	workspace, workspaceFound := findWorkspace(workspaces, workspaceName)
+	if !workspaceFound {
+		return nil, fmt.Errorf("unable to find workspace '%s'. Use 'clockidup select' or pass a workspace name with '--workspace'", workspaceName)
+	}
+	userID := workspace.Memberships[0].UserID
+
+	timeEntries, err := clockify.TimeEntries(workspace.ID, userID, start, end)
+	if err != nil {
+		return nil, fmt.Errorf("%s", err)
+	}
+
+	projects, err := clockify.Projects(workspace.ID)
+	if err != nil {
+		return nil, fmt.Errorf("%s", err)
+	}
+	projectMap := make(map[string]*Project)
+	for i := range projects {
+		proj := &projects[i]
+		projectMap[proj.ID] = proj
+	}
+
+	// Find the corresponding task when the taskId is set.
+	for i := range timeEntries {
+		entry := &timeEntries[i]
+		if entry.TaskID == "" {
+			continue
+		}
+		task, err := clockify.Task(entry.WorkspaceID, entry.ProjectID, entry.TaskID)
+		if err != nil {
+			return nil, fmt.Errorf("while fetching task for time entry '%s: %s': %s", projectMap[entry.ProjectID].Name, entry.Description, err)
+		}
+		entry.Description = task.Name + ": " + entry.Description
+	}
+
+	// When onlyBillable is enabled, we leave out the non-billable entries.
+	selectBillable := func(entries []TimeEntry) []TimeEntry {
+		var selected []TimeEntry
+		for _, entry := range entries {
+			if entry.Billable {
+				selected = append(selected, entry)
+			}
+		}
+		return selected
+	}
+	if *onlyBillable {
+		timeEntries = selectBillable(timeEntries)
+	}
+
+	// Deduplicate activities: when two activities have the same description, I
+	// merge them by summing up their duration. The key of the entriesSeen map
+	// is the description string.
+	entriesSeen := make(map[string]*MergedEntry)
+	var mergedEntries []*MergedEntry
+	for _, entry := range timeEntries {
+		existing, found := entriesSeen[entry.Description]
+		if found && !entry.TimeInterval.End.IsZero() {
+			existing.Duration += entry.TimeInterval.End.Sub(entry.TimeInterval.Start)
+			continue
+		}
+
+		projectName := "no-project"
+		if entry.ProjectID != "" {
+			projectName = projectMap[entry.ProjectID].Name
+		}
+
+		// When the time entry is still "ticking" i.e., the user has not
+		// stopped the timer yet, the "end" date is null. In this case, we
+		// still want to have an estimation of how long this entry has been
+		// going on for.
+		duration := entry.TimeInterval.End.Sub(entry.TimeInterval.Start)
+		if entry.TimeInterval.End.IsZero() {
+			duration = time.Now().UTC().Sub(entry.TimeInterval.Start)
+		}
+		new := MergedEntry{
+			Project:     projectName,
+			Description: entry.Description,
+			Duration:    duration,
+		}
+		mergedEntries = append(mergedEntries, &new)
+		entriesSeen[entry.Description] = &new
+	}
+
+	// Print the current day e.g., "Monday" if the date is within a week in
+	// the past; otherwise, print "2021-01-28".
+	if day.After(time.Now().AddDate(0, 0, -6)) {
+		fmt.Printf("%s:\n", day.Format("Monday"))
+	} else {
+		fmt.Printf("%s:\n", day.Format("2006-01-02"))
+	}
+
+	return mergedEntries, nil
 }

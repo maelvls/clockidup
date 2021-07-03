@@ -39,6 +39,54 @@ func NewClockify(token string, cl *http.Client) *Clockify {
 	return &Clockify{Client: cl}
 }
 
+// Whenever an error occurs, Clockify responds with a JSON body that looks like
+// this:
+//
+//  {
+//    "message": "Full authentication is required to access this resource",
+//    "code": 1000,
+//  }
+//
+//
+// The 'status' corresponds to the HTTP status code.
+type ErrClockify struct {
+	Message string `json:"message"`
+	Code    int    `json:"code"`
+	Status  int
+}
+
+func (c ErrClockify) Error() string {
+	return fmt.Sprintf("%d %s: %s", c.Status, http.StatusText(c.Status), c.Message)
+}
+
+// Some other errors look different, and they seem to only occur on
+// routing-related errors. In the following example, the error appears due to
+// the missing path segment 'projectID'. Since we assume that these "special"
+// errors only occur at routing time, we decided to treat them as "unexpected
+// errors".
+//
+//  {
+//      "error": "Not Found",
+//      "message": "",
+//      "path": "/v1/workspaces/60e086c24f27a949c058082e/projects//tasks/60e0a9f00afa073620eade56",
+//      "status": 404,
+//      "timestamp": "2021-07-03T18:33:41.532+00:00"
+//  }
+//
+// We also have errors have no body (and even no error code header). We also
+// treat these errors as "unexpected errors".
+type ErrUnexpect struct {
+	RawResponseBody string
+	Status          int
+}
+
+func (c ErrUnexpect) Error() string {
+	if len(c.RawResponseBody) > 0 {
+		return fmt.Sprintf("%d %s: (raw response body) %s", c.Status, http.StatusText(c.Status), c.RawResponseBody)
+	}
+	return fmt.Sprintf("%d %s (empty response body)", c.Status, http.StatusText(c.Status))
+}
+
 type Workspace struct {
 	ID                      string            `json:"id"`
 	Name                    string            `json:"name"`
@@ -111,19 +159,15 @@ func (c *Clockify) Workspaces() ([]Workspace, error) {
 	}
 
 	switch httpResp.StatusCode {
-	case 400, 401, 403, 500:
-		var errResp ClockifyError
-
-		msg := "(raw body) " + string(bytes)
-		err = json.Unmarshal(bytes, &errResp)
-		if err == nil {
-			msg = errResp.Message
-		}
-		return nil, fmt.Errorf("%s", msg)
 	case 200:
 		// continue below
 	default:
-		return nil, fmt.Errorf("unexpected HTTP status code %d for GET %s: %s", httpResp.StatusCode, path, bytes)
+		errClockify := ErrClockify{Status: httpResp.StatusCode}
+		err = json.Unmarshal(bytes, &errClockify)
+		if err != nil {
+			return nil, ErrUnexpect{RawResponseBody: string(bytes), Status: httpResp.StatusCode}
+		}
+		return nil, errClockify
 	}
 
 	var workspaces []Workspace
@@ -135,63 +179,55 @@ func (c *Clockify) Workspaces() ([]Workspace, error) {
 	return workspaces, nil
 }
 
-func FindWorkspace(workspaces []Workspace, name string) (Workspace, bool) {
-	// If no workspace is selected or name provided, we return that it is not
-	// found You must now select a workspace during login or via the select
-	// subcommand.
-	if name == "" {
-		return Workspace{}, false
-	}
-
-	for _, workspace := range workspaces {
-		if workspace.Name == name {
-			return workspace, true
-		}
-	}
-
-	return Workspace{}, false
-}
-
 type Project struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	HourlyRate struct {
-		Amount   int    `json:"amount"`
-		Currency string `json:"currency"`
-	} `json:"hourlyRate"`
-	ClientID    string `json:"clientId"`
-	WorkspaceID string `json:"workspaceId"`
-	Billable    bool   `json:"billable"`
-	Memberships []struct {
-		UserID           string      `json:"userId"`
-		HourlyRate       interface{} `json:"hourlyRate"`
-		CostRate         interface{} `json:"costRate"`
-		TargetID         string      `json:"targetId"`
-		MembershipType   string      `json:"membershipType"`
-		MembershipStatus string      `json:"membershipStatus"`
-	} `json:"memberships"`
-	Color    string `json:"color"`
-	Estimate struct {
-		Estimate string `json:"estimate"`
-		Type     string `json:"type"`
-	} `json:"estimate"`
-	Archived     bool        `json:"archived"`
-	Duration     string      `json:"duration"`
-	ClientName   string      `json:"clientName"`
-	Note         string      `json:"note"`
-	CostRate     interface{} `json:"costRate"`
-	TimeEstimate struct {
-		Estimate    string      `json:"estimate"`
-		Type        string      `json:"type"`
-		ResetOption interface{} `json:"resetOption"`
-		Active      bool        `json:"active"`
-	} `json:"timeEstimate"`
-	BudgetEstimate interface{} `json:"budgetEstimate"`
-	Template       bool        `json:"template"`
-	Public         bool        `json:"public"`
+	ID             string              `json:"id"`
+	Name           string              `json:"name"`
+	HourlyRate     HourlyRate          `json:"hourlyRate"`
+	ClientID       string              `json:"clientId"`
+	WorkspaceID    string              `json:"workspaceId"`
+	Billable       bool                `json:"billable"`
+	Memberships    []Memberships       `json:"memberships"`
+	Color          string              `json:"color"`
+	Archived       bool                `json:"archived"`
+	Duration       string              `json:"duration"`
+	ClientName     string              `json:"clientName"`
+	Note           string              `json:"note"`
+	CostRate       interface{}         `json:"costRate"`
+	TimeEstimate   ProjectTimeEstimate `json:"timeEstimate"`
+	BudgetEstimate interface{}         `json:"budgetEstimate"`
+	Public         bool                `json:"public"`
+	Template       bool                `json:"template"`
+}
+type ProjectHourlyRate struct {
+	Amount   int    `json:"amount"`
+	Currency string `json:"currency"`
+}
+type ProjectMemberships struct {
+	UserID           string      `json:"userId"`
+	HourlyRate       interface{} `json:"hourlyRate"`
+	CostRate         interface{} `json:"costRate"`
+	TargetID         string      `json:"targetId"`
+	MembershipType   string      `json:"membershipType"`
+	MembershipStatus string      `json:"membershipStatus"`
+}
+type ProjectTimeEstimate struct {
+	Estimate    string      `json:"estimate"`
+	Type        string      `json:"type"`
+	ResetOption interface{} `json:"resetOption"`
+	Active      bool        `json:"active"`
 }
 
+var ErrEmptyWorkspaceID = fmt.Errorf("workspaceID is empty")
+var ErrEmptyUserID = fmt.Errorf("userID is empty")
+var ErrEmptyTaskID = fmt.Errorf("taskID is empty")
+var ErrEmptyProjectID = fmt.Errorf("projectID is empty")
+
+// May return ErrClockify, ErrUnexpect, or ErrEmptyWorkspaceID.
 func (c *Clockify) Projects(workspaceID string) ([]Project, error) {
+	if workspaceID == "" {
+		return nil, ErrEmptyWorkspaceID
+	}
+
 	path := fmt.Sprintf("/api/v1/workspaces/%s/projects", workspaceID)
 	req, err := http.NewRequest("GET", "https://api.clockify.me"+path, nil)
 	if err != nil {
@@ -210,19 +246,15 @@ func (c *Clockify) Projects(workspaceID string) ([]Project, error) {
 	}
 
 	switch httpResp.StatusCode {
-	case 400, 401, 403, 500:
-		var errResp ClockifyError
-
-		msg := "(raw body) " + string(bytes)
-		err = json.Unmarshal(bytes, &errResp)
-		if err == nil {
-			msg = errResp.Message
-		}
-		return nil, fmt.Errorf("%s", msg)
 	case 200:
 		// continue below
 	default:
-		return nil, fmt.Errorf("unexpected HTTP status code %d for GET %s: %s", httpResp.StatusCode, path, bytes)
+		errClockify := ErrClockify{Status: httpResp.StatusCode}
+		err = json.Unmarshal(bytes, &errClockify)
+		if err != nil {
+			return nil, ErrUnexpect{RawResponseBody: string(bytes), Status: httpResp.StatusCode}
+		}
+		return nil, errClockify
 	}
 
 	var projects []Project
@@ -235,29 +267,33 @@ func (c *Clockify) Projects(workspaceID string) ([]Project, error) {
 }
 
 type TimeEntry struct {
-	ID           string   `json:"id"`
-	Description  string   `json:"description"`
-	TagIds       []string `json:"tagIds"`
-	UserID       string   `json:"userId"`
-	Billable     bool     `json:"billable"`
-	TaskID       string   `json:"taskId"`
-	ProjectID    string   `json:"projectId"`
-	TimeInterval struct {
-		Start    time.Time `json:"start"`
-		End      time.Time `json:"end"`
-		Duration string    `json:"duration"`
-	} `json:"timeInterval"`
-	WorkspaceID       string      `json:"workspaceId"`
-	IsLocked          bool        `json:"isLocked"`
-	CustomFieldValues interface{} `json:"customFieldValues"`
+	ID                string        `json:"id"`
+	Description       string        `json:"description"`
+	TagIds            []interface{} `json:"tagIds"`
+	UserID            string        `json:"userId"`
+	Billable          bool          `json:"billable"`
+	TaskID            string        `json:"taskId"`
+	ProjectID         string        `json:"projectId"`
+	TimeInterval      TimeInterval  `json:"timeInterval"`
+	WorkspaceID       string        `json:"workspaceId"`
+	IsLocked          bool          `json:"isLocked"`
+	CustomFieldValues interface{}   `json:"customFieldValues"`
+}
+type TimeInterval struct {
+	Start    time.Time `json:"start"`
+	End      time.Time `json:"end"`
+	Duration string    `json:"duration"`
 }
 
-type ClockifyError struct {
-	Message string `json:"message"`
-	Code    int    `json:"code"`
-}
-
+// May return ErrClockify, ErrUnexpect, ErrEmptyWorkspaceID or ErrEmptyUserID.
 func (c *Clockify) TimeEntries(workspaceID, userID string, start, end time.Time) ([]TimeEntry, error) {
+	if workspaceID == "" {
+		return nil, ErrEmptyWorkspaceID
+	}
+	if userID == "" {
+		return nil, ErrEmptyUserID
+	}
+
 	path := fmt.Sprintf("/api/v1/workspaces/%s/user/%s/time-entries?start=%s&end=%s",
 		workspaceID,
 		userID,
@@ -285,19 +321,15 @@ func (c *Clockify) TimeEntries(workspaceID, userID string, start, end time.Time)
 	}
 
 	switch httpResp.StatusCode {
-	case 400, 401, 403, 500:
-		var errResp ClockifyError
-
-		msg := "(raw body) " + string(bytes)
-		err = json.Unmarshal(bytes, &errResp)
-		if err == nil {
-			msg = errResp.Message
-		}
-		return nil, fmt.Errorf("%s", msg)
 	case 200:
 		// continue below
 	default:
-		return nil, fmt.Errorf("unxpected HTTP status code %d for GET %s: %s", httpResp.StatusCode, path, bytes)
+		errClockify := ErrClockify{Status: httpResp.StatusCode}
+		err = json.Unmarshal(bytes, &errClockify)
+		if err != nil {
+			return nil, ErrUnexpect{RawResponseBody: string(bytes), Status: httpResp.StatusCode}
+		}
+		return nil, errClockify
 	}
 
 	var timeEntry []TimeEntry
@@ -320,7 +352,19 @@ type Task struct {
 	Duration    string   `json:"duration"`
 }
 
+// May return ErrClockify, ErrUnexpect, ErrEmptyWorkspaceID, ErrProjectID or
+// ErrEmptyTaskID.
 func (c *Clockify) Task(workspaceID, projectID, taskID string) (Task, error) {
+	if workspaceID == "" {
+		return Task{}, ErrEmptyWorkspaceID
+	}
+	if projectID == "" {
+		return Task{}, ErrEmptyProjectID
+	}
+	if taskID == "" {
+		return Task{}, ErrEmptyTaskID
+	}
+
 	path := fmt.Sprintf("/api/v1/workspaces/%s/projects/%s/tasks/%s",
 		workspaceID,
 		projectID,
@@ -344,19 +388,15 @@ func (c *Clockify) Task(workspaceID, projectID, taskID string) (Task, error) {
 	}
 
 	switch httpResp.StatusCode {
-	case 400, 401, 403, 500:
-		var errResp ClockifyError
-
-		msg := "(raw body) " + string(bytes)
-		err = json.Unmarshal(bytes, &errResp)
-		if err == nil {
-			msg = errResp.Message
-		}
-		return Task{}, fmt.Errorf("%s", msg)
 	case 200:
 		// continue below
 	default:
-		return Task{}, fmt.Errorf("unxpected HTTP status code %d for GET %s: %s", httpResp.StatusCode, path, bytes)
+		errClockify := ErrClockify{Status: httpResp.StatusCode}
+		err = json.Unmarshal(bytes, &errClockify)
+		if err != nil {
+			return Task{}, ErrUnexpect{RawResponseBody: string(bytes), Status: httpResp.StatusCode}
+		}
+		return Task{}, errClockify
 	}
 
 	var task Task
