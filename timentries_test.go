@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFindWorkspace(t *testing.T) {
+func Test_findWorkspace(t *testing.T) {
 	tests := map[string]struct {
 		givenWorkspaces []Workspace
 		givenName       string

@@ -6,8 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
-	"regexp"
 	"strings"
 	"text/template"
 	"time"
@@ -16,6 +14,7 @@ import (
 	"github.com/mgutz/ansi"
 	"github.com/tj/go-naturaldate"
 
+	"github.com/maelvls/clockidup/clockify"
 	"github.com/maelvls/clockidup/logutil"
 )
 
@@ -265,11 +264,19 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		os.Exit(1)
 	}
 
-	clockify := NewClockify(token, http.DefaultClient)
+	clockify := clockify.NewClient(token, http.DefaultClient)
 
-	mergedEntries, err := MergeEntriesFor(clockify, workspaceName, day)
+	mergedEntries, err := timeEntriesForDay(clockify, workspaceName, day)
 	if err != nil {
 		return fmt.Errorf("while merging entries: %w", err)
+	}
+
+	// Print the current day e.g., "Monday" if the date is within a week in
+	// the past; otherwise, print "2021-01-28".
+	if day.After(time.Now().AddDate(0, 0, -6)) {
+		fmt.Printf("%s:\n", day.Format("Monday"))
+	} else {
+		fmt.Printf("%s:\n", day.Format("2006-01-02"))
 	}
 
 	for i := range mergedEntries {
@@ -291,210 +298,4 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 	}
 
 	return nil
-}
-
-// Use Go installed on the system to get the git tag of the running Go
-// executable by running:
-//
-//   go version -m /path/to/binary
-//
-// and by parsing the "mod" line. For example, we want to show "v0.3.0"
-// from the following:
-//
-//   /home/mvalais/go/bin/clockidup: go1.16.3
-//      path    github.com/maelvls/clockidup
-//      mod     github.com/maelvls/clockidup      v0.3.0  h1:84sL4RRZKsyJgSs8KFyE6ykSjtNk79bBVa0ZgC48Kpw=
-//      dep     github.com/AlecAivazis/survey/v2  v2.2.12 h1:5a07y93zA6SZ09gOa9wLVLznF5zTJMQ+pJ3cZK4IuO8=
-func versionUsingGo() (string, error) {
-	bin, err := os.Executable()
-	if err != nil {
-		return "", fmt.Errorf("while trying to find the clockidup binary path: %s", err)
-	}
-	cmd := exec.Command("go", "version", "-m", bin)
-
-	bytes, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("while slurping stdout from 'go version -m %s': %s", bin, err)
-	}
-
-	if cmd.ProcessState.ExitCode() != 0 {
-		return "", fmt.Errorf("running 'go version -m %s': %s", bin, err)
-	}
-
-	// We want to be parsing the following line:
-	//
-	//       mod     github.com/maelvls/clockidup     v0.3.0  h1:84sL4RRZKsyJgSs8KFyE6ykSjtNk79bBVa0ZgC48Kpw=
-	//   <-->   <-->                             <---><---->
-	//   tab    tab                               tab  m[0][1]
-
-	regStr := `mod\s*[^\s]*\s*([^\s]*)`
-	//                        <------>
-	//                         m[0][1]
-
-	reg := regexp.MustCompile(regStr)
-
-	m := reg.FindAllStringSubmatch(string(bytes), 1)
-	if len(m) < 1 || len(m[0]) < 2 {
-		return "", fmt.Errorf("'go version -m %s' did not return a string of the form '%s':\nmatches: %v\nstdout: %s", bin, regStr, m, string(bytes))
-	}
-
-	return m[0][1], nil
-}
-
-func findWorkspace(workspaces []Workspace, name string) (Workspace, bool) {
-	// If no workspace is selected or name provided, we return that it is not
-	// found You must now select a workspace during login or via the select
-	// subcommand.
-	if name == "" {
-		return Workspace{}, false
-	}
-
-	for _, workspace := range workspaces {
-		if workspace.Name == name {
-			return workspace, true
-		}
-	}
-
-	return Workspace{}, false
-}
-
-// MergedEntry is the result of merging time entries that have the same
-// description. The merged entry's duration is the sum of the durations of each
-// activity.
-//
-// For example, given the following time entries:
-//
-//   | Project   | Task   | Description                | Duration |
-//   |-----------|--------|----------------------------|----------|
-//   | project-2 |        | "Review PR"                | 40min    | ← merge 1
-//   | project-1 |        | "Standup"                  | 30h      |
-//   | project-1 |task-1  | "Implement user login"     | 30min    |
-//   | project-2 |        | "Review PR"                | 10min    | ← merge 1
-//   | project-1 |task-1  | "Deal with unit-testing"   | 30min    | ← merge 2
-//   | project-1 |        | "Project meeting"          | 1h       |
-//   | project-1 |task-1  | "Deal with unit-testing"   | 1h30     | ← merge 2
-//
-// then the "merged entries" are:
-//
-//   | Merged description                            | Summed duration |
-//   |-----------------------------------------------|-----------------|
-//   | "project-1: Standup"                          | 30h             |
-//   | "project-1: task-1: Implement user login"     | 30min           |
-//   | "project-2: Review PR"                        | 50min           |
-//   | "project-1: Project meeting"                  | 1h              |
-//   | "project-1: task-1: Deal with unit-testing"   | 2h              |
-//
-// Note that the order of the merged entries corresponds to the order of last
-// appearance of the merged entries.
-type MergedEntry struct {
-	Project     string
-	Description string
-	Task        string
-	Duration    time.Duration
-	Billable    bool
-}
-
-func MergeEntriesFor(clockify *Clockify, workspaceName string, day time.Time) ([]*MergedEntry, error) {
-	start := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, day.Location())
-	end := time.Date(day.Year(), day.Month(), day.Day(), 23, 59, 59, 0, day.Location())
-
-	workspaces, err := clockify.Workspaces()
-	if err != nil {
-		return nil, fmt.Errorf("%s", err)
-	}
-	if len(workspaces) == 0 {
-		return nil, fmt.Errorf("no workspaces found, check your token and re-login via 'clockidup login'")
-	}
-
-	workspace, workspaceFound := findWorkspace(workspaces, workspaceName)
-	if !workspaceFound {
-		return nil, fmt.Errorf("unable to find workspace '%s'. Use 'clockidup select' or pass a workspace name with '--workspace'", workspaceName)
-	}
-	userID := workspace.Memberships[0].UserID
-
-	timeEntries, err := clockify.TimeEntries(workspace.ID, userID, start, end)
-	if err != nil {
-		return nil, fmt.Errorf("%s", err)
-	}
-
-	projects, err := clockify.Projects(workspace.ID)
-	if err != nil {
-		return nil, fmt.Errorf("%s", err)
-	}
-	projectMap := make(map[string]*Project)
-	for i := range projects {
-		proj := &projects[i]
-		projectMap[proj.ID] = proj
-	}
-
-	// Find the corresponding task when the taskId is set.
-	for i := range timeEntries {
-		entry := &timeEntries[i]
-		if entry.TaskID == "" {
-			continue
-		}
-		task, err := clockify.Task(entry.WorkspaceID, entry.ProjectID, entry.TaskID)
-		if err != nil {
-			return nil, fmt.Errorf("while fetching task for time entry '%s: %s': %s", projectMap[entry.ProjectID].Name, entry.Description, err)
-		}
-		entry.Description = task.Name + ": " + entry.Description
-	}
-
-	// When onlyBillable is enabled, we leave out the non-billable entries.
-	selectBillable := func(entries []TimeEntry) []TimeEntry {
-		var selected []TimeEntry
-		for _, entry := range entries {
-			if entry.Billable {
-				selected = append(selected, entry)
-			}
-		}
-		return selected
-	}
-	if *onlyBillable {
-		timeEntries = selectBillable(timeEntries)
-	}
-
-	// Deduplicate activities: when two activities have the same description, I
-	// merge them by summing up their duration. The key of the entriesSeen map
-	// is the description string.
-	entriesSeen := make(map[string]*MergedEntry)
-	var mergedEntries []*MergedEntry
-	for _, entry := range timeEntries {
-		existing, found := entriesSeen[entry.Description]
-		if found && !entry.TimeInterval.End.IsZero() {
-			existing.Duration += entry.TimeInterval.End.Sub(entry.TimeInterval.Start)
-			continue
-		}
-
-		projectName := "no-project"
-		if entry.ProjectID != "" {
-			projectName = projectMap[entry.ProjectID].Name
-		}
-
-		// When the time entry is still "ticking" i.e., the user has not
-		// stopped the timer yet, the "end" date is null. In this case, we
-		// still want to have an estimation of how long this entry has been
-		// going on for.
-		duration := entry.TimeInterval.End.Sub(entry.TimeInterval.Start)
-		if entry.TimeInterval.End.IsZero() {
-			duration = time.Now().UTC().Sub(entry.TimeInterval.Start)
-		}
-		new := MergedEntry{
-			Project:     projectName,
-			Description: entry.Description,
-			Duration:    duration,
-		}
-		mergedEntries = append(mergedEntries, &new)
-		entriesSeen[entry.Description] = &new
-	}
-
-	// Print the current day e.g., "Monday" if the date is within a week in
-	// the past; otherwise, print "2021-01-28".
-	if day.After(time.Now().AddDate(0, 0, -6)) {
-		fmt.Printf("%s:\n", day.Format("Monday"))
-	} else {
-		fmt.Printf("%s:\n", day.Format("2006-01-02"))
-	}
-
-	return mergedEntries, nil
 }

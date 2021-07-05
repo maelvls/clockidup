@@ -1,4 +1,4 @@
-package main
+package clockify
 
 import (
 	"encoding/json"
@@ -15,15 +15,15 @@ type Clockify struct {
 	*http.Client
 }
 
-// The client can be left nil to use the default client. The given client
-// will be mutated in order to set the X-Api-Key header. You can use a nil
-// client to use the default http.Client.
+// NewClient creates a Clockify HTTP client. The given client can be left nil to
+// use the default client. The given client will be mutated in order to set the
+// X-Api-Key header. You can use a nil client to use the default http.Client.
 //
-// This function is not thread-safe when giving it an existing client. If
-// you do, only call this function once, since it modifies the passed
-// http.Client. This function does not do any network call and does not
-// check the validity of the token.
-func NewClockify(token string, cl *http.Client) *Clockify {
+// This function is not thread-safe when giving it an existing client. If you
+// do, only call this function once, since it modifies the passed http.Client.
+// This function does not do any network call and does not check the validity of
+// the token.
+func NewClient(token string, cl *http.Client) *Clockify {
 	if cl == nil {
 		cl = &http.Client{}
 	}
@@ -46,7 +46,6 @@ func NewClockify(token string, cl *http.Client) *Clockify {
 //    "message": "Full authentication is required to access this resource",
 //    "code": 1000,
 //  }
-//
 //
 // The 'status' corresponds to the HTTP status code.
 type ErrClockify struct {

@@ -1,4 +1,4 @@
-package main
+package clockify
 
 import (
 	"encoding/json"
@@ -316,7 +316,7 @@ func TestClockify_TimeEntries(t *testing.T) {
 
 func withToken(t *testing.T) (token string) {
 	if record {
-		return MustGetenv(t, "CLOCKIFY_TOKEN")
+		return mustGetenv(t, "CLOCKIFY_TOKEN")
 	}
 	return "redacted-token"
 }
@@ -345,7 +345,7 @@ func withReplayTransport(t *testing.T) *recorder.Recorder {
 	return rec
 }
 
-func MustGetenv(t *testing.T, v string) string {
+func mustGetenv(t *testing.T, v string) string {
 	res := os.Getenv(v)
 	if res == "" {
 		t.Errorf("The env var %s is not set or is empty. Did you forget to 'export %s=value' or to add it to your '.envrc'?", v, v)
