@@ -5,14 +5,15 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 
+	"github.com/maelvls/clockidup/clockify"
 	"github.com/maelvls/clockidup/logutil"
 )
 
 // Should only be called on a non-empty token.
 func tokenWorks(token string) bool {
 	logutil.Debugf("checking whether the token '%s' works", token)
-	clockify := NewClockify(token, nil)
-	_, err := clockify.Workspaces()
+	client := clockify.NewClient(token, nil)
+	_, err := client.Workspaces()
 	return err == nil
 }
 
@@ -63,8 +64,8 @@ func askToken(existing Config) (new Config, err error) {
 // The existing is the configuration loaded from ~/.config/clockidup.yaml.
 func askWorkspace(existing Config) (new Config, err error) {
 	logutil.Debugf("existing workspace: %s", existing.Workspace)
-	clockify := NewClockify(existing.Token, nil)
-	workspaces, err := clockify.Workspaces()
+	client := clockify.NewClient(existing.Token, nil)
+	workspaces, err := client.Workspaces()
 	if err != nil {
 		return Config{}, fmt.Errorf("Failed to list workspaces: %s", err)
 	}
@@ -88,7 +89,7 @@ func askWorkspace(existing Config) (new Config, err error) {
 	return existing, nil
 }
 
-func selectWorkspace(workspaces []Workspace) (string, error) {
+func selectWorkspace(workspaces []clockify.Workspace) (string, error) {
 	var workspaceNames []string
 	var workspace string
 	for _, workspace := range workspaces {
