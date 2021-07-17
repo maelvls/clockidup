@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"strings"
 	"text/template"
@@ -28,6 +27,7 @@ var (
 	onlyBillable  = flag.Bool("billable", false, "Only print the entries that are billable.")
 	tokenFlag     = flag.String("token", "", "The Clockify API token.")
 	workspaceFlag = flag.String("workspace", "", "Workspace Name to use.")
+	serverFlag    = flag.String("server", "https://api.clockify.me", "(For testing purposes) Override the Clockidup API endpoint.")
 
 	// The 'version' var is set during build, using something like:
 	//  go build  -ldflags "-X main.version=$(git describe --tags)".
@@ -158,18 +158,19 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		return fmt.Errorf("could not load config: %s", err)
 	}
 
-	logutil.Debugf("config loaded from ~/.config/clockidup.yaml: %#s", conf)
+	logutil.Debugf("config loaded from ~/.config/clockidup.yml: %#s", conf)
 
 	var day time.Time
 	switch flag.Arg(0) {
 	case "login":
-		conf, err := askToken(conf)
+		conf.Token, err = promptToken(conf.Token, checkToken(*serverFlag))
 		if err != nil {
 			return fmt.Errorf("login failed: %s", err)
 		}
 		logutil.Infof("you are logged in!")
 
-		conf, err = askWorkspace(conf)
+		client := clockify.NewClient(conf.Token, clockify.WithServer(*serverFlag))
+		conf, err = askWorkspace(client, conf)
 		if err != nil {
 			return fmt.Errorf("unable to set workspace: %s", err)
 		}
@@ -182,7 +183,8 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		logutil.Debugf("config: %+v", conf)
 		return nil
 	case "select":
-		conf, err = askWorkspace(conf)
+		client := clockify.NewClient(conf.Token, clockify.WithServer(*serverFlag))
+		conf, err = askWorkspace(client, conf)
 		if err != nil {
 			return fmt.Errorf("unable to set workspace: %s", err)
 		}
@@ -247,10 +249,15 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 	}
 
 	if token == "" {
-		logutil.Errorf("no configuration found in ~/.config/clockidup.yml, run 'clockidup login' first or use --token")
+		logutil.Errorf("not logged in, run 'clockidup login' first or use --token")
 		os.Exit(1)
 	}
-	if !tokenWorks(token) {
+	works, err := checkToken(*serverFlag)(token)
+	if err != nil {
+		logutil.Errorf("while checking that your token is still valid: %s", err)
+		os.Exit(1)
+	}
+	if !works {
 		logutil.Errorf("existing token does not work, run the 'login' command first or use --token")
 		os.Exit(1)
 	}
@@ -260,13 +267,13 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		workspaceName = conf.Workspace
 	}
 	if workspaceName == "" {
-		logutil.Errorf("no workspace selected, use 'clockidup select' or verify ' -workspace flag' to set a workspace")
+		logutil.Errorf("no workspace selected, use 'clockidup select' or use --workspace")
 		os.Exit(1)
 	}
 
-	clockify := clockify.NewClient(token, http.DefaultClient)
+	clockify := clockify.NewClient(token, clockify.WithServer(*serverFlag))
 
-	mergedEntries, err := timeEntriesForDay(clockify, workspaceName, day)
+	mergedEntries, err := timeEntriesForDay(clockify, time.Now, workspaceName, day)
 	if err != nil {
 		return fmt.Errorf("while merging entries: %w", err)
 	}

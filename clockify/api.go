@@ -2,6 +2,7 @@ package clockify
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -12,31 +13,56 @@ import (
 )
 
 type Clockify struct {
-	*http.Client
+	client *http.Client
+	server string
 }
 
-// NewClient creates a Clockify HTTP client. The given client can be left nil to
-// use the default client. The given client will be mutated in order to set the
-// X-Api-Key header. You can use a nil client to use the default http.Client.
+// NewClient creates a Clockify HTTP client. This function does not do any
+// network call and does not check the validity of the token.
 //
-// This function is not thread-safe when giving it an existing client. If you
-// do, only call this function once, since it modifies the passed http.Client.
-// This function does not do any network call and does not check the validity of
-// the token.
-func NewClient(token string, cl *http.Client) *Clockify {
-	if cl == nil {
-		cl = &http.Client{}
+// This function is not thread-safe when giving it an existing client. If you do
+// given a client with the WithClient option, only call NewClient function once,
+// since it modifies the passed http.Client.
+func NewClient(token string, opts ...Option) *Clockify {
+	clockify := &Clockify{
+		server: "https://api.clockify.me",
 	}
 
-	if cl.Transport == nil {
-		cl.Transport = http.DefaultTransport
+	for _, option := range opts {
+		option(clockify)
 	}
 
-	cl.Transport = transport{
-		trWrapped: cl.Transport,
+	if clockify.client == nil {
+		clockify.client = &http.Client{}
+	}
+	if clockify.client.Transport == nil {
+		clockify.client.Transport = http.DefaultTransport
+	}
+	clockify.client.Transport = transport{
+		trWrapped: clockify.client.Transport,
 		token:     token,
 	}
-	return &Clockify{Client: cl}
+
+	return clockify
+}
+
+type Option func(*Clockify)
+
+// WithServer allows you to set your own Clockify API server. By default, the
+// server is https://api.clockify.me.
+func WithServer(server string) Option {
+	return func(c *Clockify) {
+		c.server = server
+	}
+}
+
+// WithClient allows you to set your own base client. The given client will be
+// mutated in order to set the X-Api-Key header. You can use a nil client to use
+// the default http.Client. By default, an empty &http.Client{} is used.
+func WithClient(client *http.Client) Option {
+	return func(c *Clockify) {
+		c.client = client
+	}
 }
 
 // Whenever an error occurs, Clockify responds with a JSON body that looks like
@@ -141,12 +167,12 @@ type WorkspaceSettings struct {
 
 func (c *Clockify) Workspaces() ([]Workspace, error) {
 	path := "/api/v1/workspaces"
-	req, err := http.NewRequest("GET", "https://api.clockify.me"+path, nil)
+	req, err := http.NewRequest("GET", c.server+path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating HTTP request for GET %s: %w", path, err)
 	}
 
-	httpResp, err := c.Client.Do(req)
+	httpResp, err := c.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("while calling GET %s: %w", path, err)
 	}
@@ -172,6 +198,7 @@ func (c *Clockify) Workspaces() ([]Workspace, error) {
 	var workspaces []Workspace
 	err = json.Unmarshal(bytes, &workspaces)
 	if err != nil {
+		logutil.Debugf("body: %s", bytes)
 		return nil, fmt.Errorf("while parsing JSON from the HTTP response for GET %s: %w", path, err)
 	}
 
@@ -228,12 +255,12 @@ func (c *Clockify) Projects(workspaceID string) ([]Project, error) {
 	}
 
 	path := fmt.Sprintf("/api/v1/workspaces/%s/projects", workspaceID)
-	req, err := http.NewRequest("GET", "https://api.clockify.me"+path, nil)
+	req, err := http.NewRequest("GET", c.server+path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating HTTP request for GET %s: %w", path, err)
 	}
 
-	httpResp, err := c.Client.Do(req)
+	httpResp, err := c.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("while calling GET %s: %w", path, err)
 	}
@@ -303,12 +330,12 @@ func (c *Clockify) TimeEntries(workspaceID, userID string, start, end time.Time)
 		end.UTC().Format(time.RFC3339),
 	)
 
-	req, err := http.NewRequest("GET", "https://api.clockify.me"+path, nil)
+	req, err := http.NewRequest("GET", c.server+path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating HTTP request for GET %s: %w", path, err)
 	}
 
-	httpResp, err := c.Client.Do(req)
+	httpResp, err := c.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("while doing GET %s: %w", path, err)
 	}
@@ -370,12 +397,12 @@ func (c *Clockify) Task(workspaceID, projectID, taskID string) (Task, error) {
 		taskID,
 	)
 
-	req, err := http.NewRequest("GET", "https://api.clockify.me"+path, nil)
+	req, err := http.NewRequest("GET", c.server+path, nil)
 	if err != nil {
 		return Task{}, fmt.Errorf("creating HTTP request for GET %s: %w", path, err)
 	}
 
-	httpResp, err := c.Client.Do(req)
+	httpResp, err := c.client.Do(req)
 	if err != nil {
 		return Task{}, fmt.Errorf("while doing GET %s: %w", path, err)
 	}
@@ -415,6 +442,9 @@ type transport struct {
 func (tr transport) RoundTrip(r *http.Request) (*http.Response, error) {
 	r.Header.Set("X-Api-Key", tr.token)
 	resp, err := tr.trWrapped.RoundTrip(r)
+	if err != nil {
+		return nil, err
+	}
 
 	// We won't show the body here since the io.Reader might already be
 	// read somewhere else and it can only be read once. We could use a
@@ -423,5 +453,15 @@ func (tr transport) RoundTrip(r *http.Request) (*http.Response, error) {
 		logutil.Debugf("%s [%d]", gencurl.FromRequest(r), resp.StatusCode)
 	}
 
-	return resp, err
+	return resp, nil
+}
+
+func Is(err error, status int) bool {
+	var clErr ErrClockify
+	switch {
+	case errors.As(err, &clErr) && clErr.Status == status:
+		return true
+	default:
+		return false
+	}
 }

@@ -22,7 +22,7 @@ func TestClockify_Workspaces(t *testing.T) {
 	tr := withReplayTransport(t)
 
 	t.Run("two workspaces are returned", func(t *testing.T) {
-		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+		clockify := NewClient(withToken(t), WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.Workspaces()
 
@@ -34,7 +34,7 @@ func TestClockify_Workspaces(t *testing.T) {
 	})
 
 	t.Run("unauthenticated", func(t *testing.T) {
-		clockify := NewClockify("invalid-token", &http.Client{Transport: tr})
+		clockify := NewClient("invalid-token", WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.Workspaces()
 
@@ -75,7 +75,7 @@ func TestClockify_Projects(t *testing.T) {
 	tr := withReplayTransport(t)
 
 	t.Run("the requested project id exists", func(t *testing.T) {
-		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+		clockify := NewClient(withToken(t), WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.Projects("60e086c24f27a949c058082e") // "workspace-1"
 
@@ -112,7 +112,7 @@ func TestClockify_Projects(t *testing.T) {
 	})
 
 	t.Run("the requested project id does not exist", func(t *testing.T) {
-		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+		clockify := NewClient(withToken(t), WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.Projects("some-dummy-id")
 
@@ -121,7 +121,7 @@ func TestClockify_Projects(t *testing.T) {
 	})
 
 	t.Run("empty project id", func(t *testing.T) {
-		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+		clockify := NewClient(withToken(t), WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.Projects("")
 
@@ -134,7 +134,7 @@ func TestClockify_Task(t *testing.T) {
 	tr := withReplayTransport(t)
 
 	t.Run("the requested task id exists", func(t *testing.T) {
-		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+		clockify := NewClient(withToken(t), WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.Task(
 			"60e086c24f27a949c058082e", // "workspace-1"
@@ -155,7 +155,7 @@ func TestClockify_Task(t *testing.T) {
 	})
 
 	t.Run("the requested task id does not exist", func(t *testing.T) {
-		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+		clockify := NewClient(withToken(t), WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.Task(
 			"60e086c24f27a949c058082e", // "workspace-1"
@@ -168,7 +168,7 @@ func TestClockify_Task(t *testing.T) {
 	})
 
 	t.Run("empty workspace id", func(t *testing.T) {
-		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+		clockify := NewClient(withToken(t), WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.Task("", "60e0a9cf5f596c5a7d10d821", "60e0a9f00afa073620eade56")
 
@@ -177,7 +177,7 @@ func TestClockify_Task(t *testing.T) {
 	})
 
 	t.Run("empty project id", func(t *testing.T) {
-		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+		clockify := NewClient(withToken(t), WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.Task("60e086c24f27a949c058082e", "", "60e0a9f00afa073620eade56")
 
@@ -186,7 +186,7 @@ func TestClockify_Task(t *testing.T) {
 	})
 
 	t.Run("empty task id", func(t *testing.T) {
-		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+		clockify := NewClient(withToken(t), WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.Task("60e086c24f27a949c058082e", "60e0a9cf5f596c5a7d10d821", "")
 
@@ -199,7 +199,7 @@ func TestClockify_TimeEntries(t *testing.T) {
 	tr := withReplayTransport(t)
 
 	t.Run("the requested workspace and user exist", func(t *testing.T) {
-		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+		clockify := NewClient(withToken(t), WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.TimeEntries(
 			"60e086c24f27a949c058082e", // "workspace-1"
@@ -260,7 +260,7 @@ func TestClockify_TimeEntries(t *testing.T) {
 		}}), got)
 	})
 	t.Run("the requested workspace does not exist", func(t *testing.T) {
-		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+		clockify := NewClient(withToken(t), WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.TimeEntries(
 			"dummy-workspace",
@@ -273,7 +273,7 @@ func TestClockify_TimeEntries(t *testing.T) {
 		assert.Equal(t, []TimeEntry(nil), got)
 	})
 	t.Run("the requested user does not exist", func(t *testing.T) {
-		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+		clockify := NewClient(withToken(t), WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.TimeEntries(
 			"60e086c24f27a949c058082e", // "workspace-1"
@@ -286,7 +286,7 @@ func TestClockify_TimeEntries(t *testing.T) {
 		assert.Equal(t, []TimeEntry(nil), got)
 	})
 	t.Run("the requested workspace is empty", func(t *testing.T) {
-		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+		clockify := NewClient(withToken(t), WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.TimeEntries(
 			"",
@@ -299,7 +299,7 @@ func TestClockify_TimeEntries(t *testing.T) {
 		assert.Equal(t, []TimeEntry(nil), got)
 	})
 	t.Run("the requested user is empty", func(t *testing.T) {
-		clockify := NewClockify(withToken(t), &http.Client{Transport: tr})
+		clockify := NewClient(withToken(t), WithClient(&http.Client{Transport: tr}))
 
 		got, gotErr := clockify.TimeEntries(
 			"60e086c24f27a949c058082e", // "workspace-1"
@@ -327,7 +327,7 @@ func withReplayTransport(t *testing.T) *recorder.Recorder {
 		mode = recorder.ModeRecording
 	}
 
-	rec, err := recorder.NewAsMode("fixtures/"+strings.ToLower(callerFnName()), mode, http.DefaultTransport)
+	rec, err := recorder.NewAsMode("fixtures/"+strings.ToLower(t.Name()), mode, http.DefaultTransport)
 	assert.NoError(t, err)
 	t.Cleanup(func() {
 		_ = rec.Stop()
@@ -437,4 +437,46 @@ func mustParse(s string) time.Time {
 		panic(err)
 	}
 	return t
+}
+
+func TestNewClient(t *testing.T) {
+	t.Run("with WithClient, the client is overridden", func(t *testing.T) {
+		expect := &http.Client{}
+		got := NewClient("token", WithClient(expect))
+		assert.Same(t, expect, got.client)
+	})
+	t.Run("with WithClient and no transport, the given client has its transport changed", func(t *testing.T) {
+		c := &http.Client{}
+		assert.Nil(t, c.Transport)
+
+		got := NewClient("token", WithClient(c))
+		assert.IsType(t, transport{}, got.client.Transport)
+	})
+	t.Run("with WithClient and some transport, the given client has its transport changed", func(t *testing.T) {
+		c := &http.Client{}
+		c.Transport = http.DefaultTransport.(*http.Transport).Clone()
+		assert.NotNil(t, c.Transport)
+
+		got := NewClient("token", WithClient(c))
+		assert.IsType(t, transport{}, got.client.Transport)
+	})
+	t.Run("without WithClient, the X-Api-Key is set on requests", func(t *testing.T) {
+		c := NewClient("token")
+		req, _ := http.NewRequest("GET", "foo://foo", http.NoBody)
+		_, _ = c.client.Do(req)
+		assert.Equal(t, "token", req.Header.Get("X-Api-Key"), "the header X-Api-Key is expected to be set")
+	})
+	t.Run("with WithClient, the X-Api-Key is set on requests", func(t *testing.T) {
+		c := &http.Client{}
+		c.Transport = http.DefaultTransport.(*http.Transport).Clone()
+		cc := NewClient("token", WithClient(c))
+		req, _ := http.NewRequest("GET", "foo://foo", http.NoBody)
+		_, _ = cc.client.Do(req)
+		assert.Equal(t, "token", req.Header.Get("X-Api-Key"), "the header X-Api-Key is expected to be set")
+	})
+	t.Run("WithServer overrides the server", func(t *testing.T) {
+		expect := &http.Client{}
+		got := NewClient("token", WithClient(expect))
+		assert.Same(t, expect, got.client)
+	})
 }

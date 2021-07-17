@@ -22,7 +22,16 @@ type timeEntry struct {
 	Billable    bool
 }
 
-func timeEntriesForDay(client *clockify.Clockify, workspaceName string, day time.Time) ([]timeEntry, error) {
+// Testing purposes.
+type clockifyClient interface {
+	Workspaces() ([]clockify.Workspace, error)
+	Projects(workspaceID string) ([]clockify.Project, error)
+	TimeEntries(workspaceID, userID string, start, end time.Time) ([]clockify.TimeEntry, error)
+	Task(workspaceID, projectID, taskID string) (clockify.Task, error)
+}
+
+// Times are UTC.
+func timeEntriesForDay(client clockifyClient, now func() time.Time, workspaceName string, day time.Time) ([]timeEntry, error) {
 	start := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, day.Location())
 	end := time.Date(day.Year(), day.Month(), day.Day(), 23, 59, 59, 0, day.Location())
 
@@ -73,7 +82,7 @@ func timeEntriesForDay(client *clockify.Clockify, workspaceName string, day time
 		// going on for.
 		duration := entry.TimeInterval.End.Sub(entry.TimeInterval.Start)
 		if entry.TimeInterval.End.IsZero() {
-			duration = time.Now().UTC().Sub(entry.TimeInterval.Start)
+			duration = now().UTC().Sub(entry.TimeInterval.Start)
 		}
 
 		projectName := ""
@@ -142,22 +151,21 @@ func mergeSimilarEntries(entries []timeEntry) ([]timeEntry, error) {
 	entriesSeen := make(map[key]*timeEntry)
 	var mergedEntries []timeEntry
 	for _, entry := range entries {
-		existing, found := entriesSeen[key{entry.Project, entry.Task, entry.Description}]
-		if found {
+		existing, alreadySeen := entriesSeen[key{entry.Project, entry.Task, entry.Description}]
+		if alreadySeen {
 			existing.Duration += entry.Duration
 			continue
 		}
 
-		new := entry
-		mergedEntries = append(mergedEntries, new)
-		entriesSeen[key{entry.Project, entry.Task, entry.Description}] = &new
+		mergedEntries = append(mergedEntries, entry)
+		entriesSeen[key{entry.Project, entry.Task, entry.Description}] = &mergedEntries[len(mergedEntries)-1]
 	}
 
 	return mergedEntries, nil
 }
 
 // Now, we want to mash the project name and task name into the description
-// of the time entry.
+// of the time entry. The format is "project 1: task 1: work on clockidup".
 func String(entry timeEntry) string {
 	str := entry.Description
 	if entry.Task != "" {

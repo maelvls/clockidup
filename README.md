@@ -44,7 +44,7 @@ To login with Clockify:
 clockidup login
 ```
 
-https://user-images.githubusercontent.com/2195781/123278842-95d23200-d507-11eb-8d31-7678575e8d37.gif
+![](https://user-images.githubusercontent.com/2195781/123278842-95d23200-d507-11eb-8d31-7678575e8d37.gif)
 
 If you are using multiple Clockify workspaces, you can also switch between
 workspaces using `clockidup select`
