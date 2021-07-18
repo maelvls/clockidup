@@ -146,21 +146,29 @@ func selectBillable(entries []timeEntry) []timeEntry {
 //
 // Note that the order of the merged entries corresponds to the order of first
 // appearance of the similar entries.
-func mergeSimilarEntries(entries []timeEntry) ([]timeEntry, error) {
+func mergeSimilarEntries(entries []timeEntry) []timeEntry {
 	type key struct{ project, task, descr string }
-	entriesSeen := make(map[key]*timeEntry)
-	var mergedEntries []timeEntry
+	merged := make(map[key]timeEntry)
+	var mergedOrder []key
 	for _, entry := range entries {
-		existing, alreadySeen := entriesSeen[key{entry.Project, entry.Task, entry.Description}]
+		k := key{entry.Project, entry.Task, entry.Description}
+
+		existing, alreadySeen := merged[k]
 		if alreadySeen {
 			existing.Duration += entry.Duration
+			merged[k] = existing
 			continue
 		}
-		mergedEntries = append(mergedEntries, entry)
-		entriesSeen[key{entry.Project, entry.Task, entry.Description}] = &mergedEntries[len(mergedEntries)-1]
+
+		mergedOrder = append(mergedOrder, k)
+		merged[k] = entry
 	}
 
-	return mergedEntries, nil
+	var mergedEntries []timeEntry
+	for _, key := range mergedOrder {
+		mergedEntries = append(mergedEntries, merged[key])
+	}
+	return mergedEntries
 }
 
 // Now, we want to mash the project name and task name into the description

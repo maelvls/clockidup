@@ -248,23 +248,20 @@ func Test_mergeSimilarEntries(t *testing.T) {
 			name: "merge when descriptions and projects and tasks are equal",
 			given: []timeEntry{
 				{Description: "time entry 1", Project: "project 1", Task: "task 1", Duration: 30 * time.Minute},
-				{Description: "time entry 1", Project: "project 1", Task: "task 1", Duration: 30 * time.Minute},
+				{Description: "time entry 2", Duration: 60 * time.Minute},
 				{Description: "time entry 1", Project: "project 1", Task: "task 1", Duration: 10 * time.Minute},
+				{Description: "time entry 2", Duration: 70 * time.Minute},
+				{Description: "time entry 1", Project: "project 1", Task: "task 1", Duration: 30 * time.Minute},
 			},
 			want: []timeEntry{
 				{Description: "time entry 1", Project: "project 1", Task: "task 1", Duration: 70 * time.Minute},
+				{Description: "time entry 2", Duration: 130 * time.Minute},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := mergeSimilarEntries(tt.given)
-			if tt.wantErr != nil {
-				require.Error(t, err)
-				assert.Equal(t, tt.wantErr, err)
-				return
-			}
-			require.NoError(t, err)
+			got := mergeSimilarEntries(tt.given)
 			assert.Equal(t, tt.want, got)
 		})
 	}

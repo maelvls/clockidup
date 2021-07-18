@@ -282,10 +282,7 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		return fmt.Errorf("while fetching time entries: %w", err)
 	}
 
-	entries, err = mergeSimilarEntries(entries)
-	if err != nil {
-		return fmt.Errorf("while merging similar time entries: %w", err)
-	}
+	entries = mergeSimilarEntries(entries)
 
 	if *onlyBillable {
 		entries = selectBillable(entries)
