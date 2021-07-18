@@ -1,6 +1,9 @@
 package clockify
 
 import (
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -479,4 +482,50 @@ func TestNewClient(t *testing.T) {
 		got := NewClient("token", WithClient(expect))
 		assert.Same(t, expect, got.client)
 	})
+}
+
+func TestIs(t *testing.T) {
+	tests := []struct {
+		givenErr    error
+		givenStatus int
+		want        bool
+	}{
+		{
+			givenErr: nil,
+			want:     false,
+		},
+		{
+			givenErr:    nil,
+			givenStatus: 200,
+			want:        false,
+		},
+		{
+			givenErr: fmt.Errorf("some err"),
+			want:     false,
+		},
+		{
+			givenErr: ErrClockify{Message: "Full authentication is required to access this resource", Code: 1000, Status: 401},
+			want:     false,
+		},
+		{
+			givenErr:    ErrClockify{Message: "Full authentication is required to access this resource", Code: 1000, Status: 401},
+			givenStatus: 401,
+			want:        true,
+		},
+		{
+			givenErr: ErrClockify{Message: "", Status: 403},
+			want:     false,
+		},
+		{
+			givenErr:    ErrClockify{Message: "", Status: 403},
+			givenStatus: 403,
+			want:        true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			got := Is(tt.givenErr, tt.givenStatus)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }
