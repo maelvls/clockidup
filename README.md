@@ -138,4 +138,21 @@ And when the day is more than 7 days ago, you can use the
 You can use the `--billable` flag if you only want to see the Clockify entries
 that have the `billable: true` property.
 
+## End-to-end tests
+
+The end-to-end tests are using pre-recorded HTTP interactions. The interactions
+have been recorded using a dummy account
+(mael+clockify-end-to-end-tests@vls.dev) with two workspaces (times are GMT+2):
+
+- `workspace-2` is empty,
+- `workspace-1` has a single day filled with entries (2021-07-16):
+  ![testing-clockidup](https://user-images.githubusercontent.com/2195781/126077431-417b4296-a2dd-4080-b0f5-d28ec293bb1c.png)
+
+Both "live" and "recorded" tests are run in GitHub Actions. To run the "live"
+tests, set `CLOCKIFY_TOKEN` and run:
+
+```sh
+RECORD=1 go test ./...
+```
+
 <div style="text-align: right"><a href="https://github.com/maelvls/clockidup/edit/main/README.md">🐓 Edit this page</a></div>

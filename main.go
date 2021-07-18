@@ -277,9 +277,18 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 
 	clockify := clockify.NewClient(token, clockify.WithServer(*serverFlag))
 
-	mergedEntries, err := timeEntriesForDay(clockify, time.Now, workspaceName, day)
+	entries, err := timeEntriesForDay(clockify, time.Now, workspaceName, day)
 	if err != nil {
-		return fmt.Errorf("while merging entries: %w", err)
+		return fmt.Errorf("while fetching time entries: %w", err)
+	}
+
+	entries, err = mergeSimilarEntries(entries)
+	if err != nil {
+		return fmt.Errorf("while merging similar time entries: %w", err)
+	}
+
+	if *onlyBillable {
+		entries = selectBillable(entries)
 	}
 
 	// Print the current day e.g., "Monday" if the date is within a week in
@@ -290,8 +299,8 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		fmt.Printf("%s:\n", day.Format("2006-01-02"))
 	}
 
-	for i := range mergedEntries {
-		entry := mergedEntries[len(mergedEntries)-i-1]
+	for i := range entries {
+		entry := entries[len(entries)-i-1]
 
 		// The format "%.1f" (precision = 1) rounds the 2nd digit after the
 		// decimal to the closest neighbor. We also remove the leading zero to

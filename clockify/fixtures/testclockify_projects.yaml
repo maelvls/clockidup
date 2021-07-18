@@ -10,16 +10,16 @@ interactions:
     url: https://api.clockify.me/api/v1/workspaces/60e086c24f27a949c058082e/projects
     method: GET
   response:
-    body: '[{"id":"60e0a9cf5f596c5a7d10d821","name":"project-1","hourlyRate":{"amount":0,"currency":"USD"},"clientId":"","workspaceId":"60e086c24f27a949c058082e","billable":true,"memberships":[{"userId":"60e086c24f27a949c058082d","hourlyRate":null,"costRate":null,"targetId":"60e0a9cf5f596c5a7d10d821","membershipType":"PROJECT","membershipStatus":"ACTIVE"}],"color":"#795548","estimate":{"estimate":"PT0S","type":"AUTO"},"archived":false,"duration":"PT1H","clientName":"","note":"","costRate":null,"timeEstimate":{"estimate":"PT0S","type":"AUTO","resetOption":null,"active":false},"budgetEstimate":null,"public":true,"template":false}]'
+    body: '[{"id":"60e0a9cf5f596c5a7d10d821","name":"project-1","hourlyRate":{"amount":0,"currency":"USD"},"clientId":"","workspaceId":"60e086c24f27a949c058082e","billable":true,"memberships":[{"userId":"60e086c24f27a949c058082d","hourlyRate":null,"costRate":null,"targetId":"60e0a9cf5f596c5a7d10d821","membershipType":"PROJECT","membershipStatus":"ACTIVE"}],"color":"#795548","estimate":{"estimate":"PT0S","type":"AUTO"},"archived":false,"duration":"PT2H","clientName":"","note":"","costRate":null,"timeEstimate":{"estimate":"PT0S","type":"AUTO","resetOption":null,"active":false},"budgetEstimate":null,"public":true,"template":false},{"id":"60f4681a0fdfe402db9afae9","name":"project-2","hourlyRate":{"amount":0,"currency":"USD"},"clientId":"","workspaceId":"60e086c24f27a949c058082e","billable":true,"memberships":[{"userId":"60e086c24f27a949c058082d","hourlyRate":null,"costRate":null,"targetId":"60f4681a0fdfe402db9afae9","membershipType":"PROJECT","membershipStatus":"ACTIVE"}],"color":"#FF5722","estimate":{"estimate":"PT0S","type":"AUTO"},"archived":false,"duration":"PT45M","clientName":"","note":"","costRate":null,"timeEstimate":{"estimate":"PT0S","type":"AUTO","resetOption":null,"active":false},"budgetEstimate":null,"public":true,"template":false}]'
     headers:
       Cache-Control:
       - no-cache, no-store, max-age=0, must-revalidate
       Content-Length:
-      - "625"
+      - "1250"
       Content-Type:
       - application/json
       Date:
-      - Sat, 17 Jul 2021 15:34:03 GMT
+      - Sun, 18 Jul 2021 18:00:24 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:
@@ -31,7 +31,7 @@ interactions:
       - Access-Control-Request-Method
       - Access-Control-Request-Headers
       X-Auth-Checksum:
-      - 68639daebca275727f5fcd33fbbeaa86d3010f812e423e3f2f8cea0e4e7c17a7
+      - 1ab87e9cee4628aa38414e00f671b439f610886e3af634c98eccee9bbf22e4fc
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -57,7 +57,7 @@ interactions:
       Content-Length:
       - "0"
       Date:
-      - Sat, 17 Jul 2021 15:34:03 GMT
+      - Sun, 18 Jul 2021 18:00:24 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:
@@ -69,7 +69,7 @@ interactions:
       - Access-Control-Request-Method
       - Access-Control-Request-Headers
       X-Auth-Checksum:
-      - 68639daebca275727f5fcd33fbbeaa86d3010f812e423e3f2f8cea0e4e7c17a7
+      - 1ab87e9cee4628aa38414e00f671b439f610886e3af634c98eccee9bbf22e4fc
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:

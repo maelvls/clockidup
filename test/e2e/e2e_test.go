@@ -113,9 +113,10 @@ func Test_CLI(t *testing.T) {
 		output := contents(cli.Output)
 		assert.Equal(t, heredoc.Doc(`
 			2021-07-03:
-			- [.5] project-1: Unit-test of clockidup, work with project and task
-			- [.5] project-1: Some work with project but no task
-			- [.5] : Work with no project
+			- [.8] project-2: work on project-2
+			- [.8] project-1: unit-test of clockidup, work with project and task
+			- [.8] project-1: some work with project but no task
+			- [1.2] : work with no project
 		`), output)
 
 		assert.Equal(t, 0, cli.ProcessState.ExitCode())

@@ -156,7 +156,6 @@ func mergeSimilarEntries(entries []timeEntry) ([]timeEntry, error) {
 			existing.Duration += entry.Duration
 			continue
 		}
-
 		mergedEntries = append(mergedEntries, entry)
 		entriesSeen[key{entry.Project, entry.Task, entry.Description}] = &mergedEntries[len(mergedEntries)-1]
 	}

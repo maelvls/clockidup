@@ -98,18 +98,18 @@ func Test_timeEntriesForDay(t *testing.T) {
 				}, nil)
 				m.TimeEntries("workspace-1-uid", "user-1-uid", mustParse("2021-07-03T00:00:00Z"), mustParse("2021-07-03T23:59:59Z")).Return([]clockify.TimeEntry{{
 					ID: "entry-1-uid", WorkspaceID: "workspace-1-uid", UserID: "user-1-uid",
-					Description:  "Work with no project",
+					Description:  "work with no project",
 					Billable:     false,
 					TimeInterval: clockify.TimeInterval{Start: mustParse("2021-07-03T13:30:00Z"), End: mustParse("2021-07-03T14:00:00Z"), Duration: "PT30M"},
 				}, {
 					ID: "entry-2-uid", WorkspaceID: "workspace-1-uid", UserID: "user-1-uid",
 					ProjectID:    "project-1-uid",
-					Description:  "Some work with project but no task",
+					Description:  "some work with project but no task",
 					Billable:     true,
 					TimeInterval: clockify.TimeInterval{Start: mustParse("2021-07-03T13:00:00Z"), End: mustParse("2021-07-03T13:30:00Z"), Duration: "PT30M"},
 				}, {
 					ID: "entry-3-uid", WorkspaceID: "workspace-1-uid", UserID: "user-1-uid",
-					Description:  "Unit-test of clockidup, work with project and task",
+					Description:  "unit-test of clockidup, work with project and task",
 					ProjectID:    "project-1-uid",
 					TaskID:       "task-1-uid",
 					Billable:     true,
@@ -121,9 +121,9 @@ func Test_timeEntriesForDay(t *testing.T) {
 				m.Task("workspace-1-uid", "project-1-uid", "task-1-uid").Return(clockify.Task{ID: "task-1-uid", Name: "task-1"}, nil)
 			},
 			want: []timeEntry{
-				{Project: "", Description: "Work with no project", Duration: 30 * time.Minute, Billable: false},
-				{Project: "project-1", Description: "Some work with project but no task", Duration: 30 * time.Minute, Billable: true},
-				{Project: "project-1", Description: "Unit-test of clockidup, work with project and task", Task: "task-1", Duration: 30 * time.Minute, Billable: true},
+				{Project: "", Description: "work with no project", Duration: 30 * time.Minute, Billable: false},
+				{Project: "project-1", Description: "some work with project but no task", Duration: 30 * time.Minute, Billable: true},
+				{Project: "project-1", Description: "unit-test of clockidup, work with project and task", Task: "task-1", Duration: 30 * time.Minute, Billable: true},
 			},
 		},
 		{
