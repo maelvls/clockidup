@@ -1,9 +1,6 @@
 package clockify
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"encoding/json"
 	"fmt"
 	"net/http"

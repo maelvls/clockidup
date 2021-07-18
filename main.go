@@ -163,14 +163,16 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 	var day time.Time
 	switch flag.Arg(0) {
 	case "login":
-		conf.Token, err = promptToken(conf.Token, checkToken(*serverFlag))
+		conf.Token, err = promptToken(conf.Token, func(token string) clockifyClient {
+			return clockify.NewClient(token, clockify.WithServer(*serverFlag))
+		})
 		if err != nil {
 			return fmt.Errorf("login failed: %s", err)
 		}
 		logutil.Infof("you are logged in!")
 
 		client := clockify.NewClient(conf.Token, clockify.WithServer(*serverFlag))
-		conf, err = askWorkspace(client, conf)
+		conf, err = promptWorkspace(client, conf)
 		if err != nil {
 			return fmt.Errorf("unable to set workspace: %s", err)
 		}
@@ -184,7 +186,7 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		return nil
 	case "select":
 		client := clockify.NewClient(conf.Token, clockify.WithServer(*serverFlag))
-		conf, err = askWorkspace(client, conf)
+		conf, err = promptWorkspace(client, conf)
 		if err != nil {
 			return fmt.Errorf("unable to set workspace: %s", err)
 		}
@@ -252,7 +254,9 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		logutil.Errorf("not logged in, run 'clockidup login' first or use --token")
 		os.Exit(1)
 	}
-	works, err := checkToken(*serverFlag)(token)
+	works, err := checkToken(token, func(token string) clockifyClient {
+		return clockify.NewClient(token, clockify.WithServer(*serverFlag))
+	})
 	if err != nil {
 		logutil.Errorf("while checking that your token is still valid: %s", err)
 		os.Exit(1)

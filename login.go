@@ -9,12 +9,23 @@ import (
 	"github.com/maelvls/clockidup/logutil"
 )
 
-func promptToken(existingToken string, checkToken func(token string) (bool, error)) (newToken string, _ error) {
+func checkToken(token string, client func(token string) clockifyClient) (bool, error) {
+	_, err := client(token).Workspaces()
+	if clockify.Is(err, 401) || clockify.Is(err, 403) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func promptToken(existingToken string, client func(token string) clockifyClient) (newToken string, _ error) {
 	logutil.Infof("the API token is available at %s", logutil.Green("https://clockify.me/user/settings"))
 
 	// Check whether the existing token already works or not and ask the
 	// user if it already works.
-	works, err := checkToken(existingToken)
+	works, err := checkToken(existingToken, client)
 	if err != nil {
 		return "", err
 	}
@@ -48,7 +59,7 @@ func promptToken(existingToken string, checkToken func(token string) (bool, erro
 		return "", err
 	}
 
-	works, err = checkToken(token)
+	works, err = checkToken(token, client)
 	if err != nil {
 		return "", err
 	}
@@ -59,21 +70,8 @@ func promptToken(existingToken string, checkToken func(token string) (bool, erro
 	return token, nil
 }
 
-func checkToken(server string) func(token string) (bool, error) {
-	return func(token string) (bool, error) {
-		_, err := clockify.NewClient(token, clockify.WithServer(server)).Workspaces()
-		if clockify.Is(err, 401) || clockify.Is(err, 403) {
-			return false, nil
-		}
-		if err != nil {
-			return false, err
-		}
-		return true, nil
-	}
-}
-
 // The existing is the configuration loaded from ~/.config/clockidup.yaml.
-func askWorkspace(client clockifyClient, existing Config) (new Config, err error) {
+func promptWorkspace(client clockifyClient, existing Config) (new Config, err error) {
 	logutil.Debugf("existing workspace: %s", existing.Workspace)
 
 	workspaces, err := client.Workspaces()
@@ -100,7 +98,7 @@ func askWorkspace(client clockifyClient, existing Config) (new Config, err error
 	return existing, nil
 }
 
-func selectWorkspace(workspaces []clockify.Workspace) (string, error) {
+func promptWorkspaceSelect(workspaces []clockify.Workspace) (string, error) {
 	var workspaceNames []string
 	var workspace string
 	for _, workspace := range workspaces {
