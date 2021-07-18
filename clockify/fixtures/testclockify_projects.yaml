@@ -1,0 +1,81 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      X-Api-Key:
+      - redacted-token
+    url: https://api.clockify.me/api/v1/workspaces/60e086c24f27a949c058082e/projects
+    method: GET
+  response:
+    body: '[{"id":"60e0a9cf5f596c5a7d10d821","name":"project-1","hourlyRate":{"amount":0,"currency":"USD"},"clientId":"","workspaceId":"60e086c24f27a949c058082e","billable":true,"memberships":[{"userId":"60e086c24f27a949c058082d","hourlyRate":null,"costRate":null,"targetId":"60e0a9cf5f596c5a7d10d821","membershipType":"PROJECT","membershipStatus":"ACTIVE"}],"color":"#795548","estimate":{"estimate":"PT0S","type":"AUTO"},"archived":false,"duration":"PT1H","clientName":"","note":"","costRate":null,"timeEstimate":{"estimate":"PT0S","type":"AUTO","resetOption":null,"active":false},"budgetEstimate":null,"public":true,"template":false}]'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Content-Length:
+      - "625"
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 17 Jul 2021 15:34:03 GMT
+      Expected-Client-Version:
+      - 1.0.0
+      Expires:
+      - "0"
+      Pragma:
+      - no-cache
+      Vary:
+      - Origin
+      - Access-Control-Request-Method
+      - Access-Control-Request-Headers
+      X-Auth-Checksum:
+      - 68639daebca275727f5fcd33fbbeaa86d3010f812e423e3f2f8cea0e4e7c17a7
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      X-Api-Key:
+      - redacted-token
+    url: https://api.clockify.me/api/v1/workspaces/some-dummy-id/projects
+    method: GET
+  response:
+    body: ""
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Content-Length:
+      - "0"
+      Date:
+      - Sat, 17 Jul 2021 15:34:03 GMT
+      Expected-Client-Version:
+      - 1.0.0
+      Expires:
+      - "0"
+      Pragma:
+      - no-cache
+      Vary:
+      - Origin
+      - Access-Control-Request-Method
+      - Access-Control-Request-Headers
+      X-Auth-Checksum:
+      - 68639daebca275727f5fcd33fbbeaa86d3010f812e423e3f2f8cea0e4e7c17a7
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 403 Forbidden
+    code: 403
+    duration: ""

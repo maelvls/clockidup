@@ -4,10 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
-	"os/exec"
-	"regexp"
 	"strings"
 	"text/template"
 	"time"
@@ -16,6 +13,7 @@ import (
 	"github.com/mgutz/ansi"
 	"github.com/tj/go-naturaldate"
 
+	"github.com/maelvls/clockidup/clockify"
 	"github.com/maelvls/clockidup/logutil"
 )
 
@@ -29,9 +27,10 @@ var (
 	onlyBillable  = flag.Bool("billable", false, "Only print the entries that are billable.")
 	tokenFlag     = flag.String("token", "", "The Clockify API token.")
 	workspaceFlag = flag.String("workspace", "", "Workspace Name to use.")
+	serverFlag    = flag.String("server", "https://api.clockify.me", "(For testing purposes) Override the Clockidup API endpoint.")
 
 	// The 'version' var is set during build, using something like:
-	//  go build  -ldflags"-X main.version=$(git describe --tags)".
+	//  go build  -ldflags "-X main.version=$(git describe --tags)".
 	// Note: "version", is set automatically by goreleaser.
 	version = ""
 )
@@ -159,18 +158,19 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		return fmt.Errorf("could not load config: %s", err)
 	}
 
-	logutil.Debugf("config loaded from ~/.config/clockidup.yaml: %#s", conf)
+	logutil.Debugf("config loaded from ~/.config/clockidup.yml: %#s", conf)
 
 	var day time.Time
 	switch flag.Arg(0) {
 	case "login":
-		conf, err := askToken(conf)
+		conf.Token, err = promptToken(conf.Token, checkToken(*serverFlag))
 		if err != nil {
 			return fmt.Errorf("login failed: %s", err)
 		}
 		logutil.Infof("you are logged in!")
 
-		conf, err = askWorkspace(conf)
+		client := clockify.NewClient(conf.Token, clockify.WithServer(*serverFlag))
+		conf, err = askWorkspace(client, conf)
 		if err != nil {
 			return fmt.Errorf("unable to set workspace: %s", err)
 		}
@@ -183,7 +183,8 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		logutil.Debugf("config: %+v", conf)
 		return nil
 	case "select":
-		conf, err = askWorkspace(conf)
+		client := clockify.NewClient(conf.Token, clockify.WithServer(*serverFlag))
+		conf, err = askWorkspace(client, conf)
 		if err != nil {
 			return fmt.Errorf("unable to set workspace: %s", err)
 		}
@@ -248,25 +249,17 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 	}
 
 	if token == "" {
-		logutil.Errorf("no configuration found in ~/.config/clockidup.yml, run 'clockidup login' first or use --token")
+		logutil.Errorf("not logged in, run 'clockidup login' first or use --token")
 		os.Exit(1)
 	}
-	if !tokenWorks(token) {
+	works, err := checkToken(*serverFlag)(token)
+	if err != nil {
+		logutil.Errorf("while checking that your token is still valid: %s", err)
+		os.Exit(1)
+	}
+	if !works {
 		logutil.Errorf("existing token does not work, run the 'login' command first or use --token")
 		os.Exit(1)
-	}
-
-	start := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, day.Location())
-	end := time.Date(day.Year(), day.Month(), day.Day(), 23, 59, 59, 0, day.Location())
-
-	clockify := NewClockify(token, http.DefaultClient)
-
-	workspaces, err := clockify.Workspaces()
-	if err != nil {
-		return fmt.Errorf("%s", err)
-	}
-	if len(workspaces) == 0 {
-		return fmt.Errorf("no workspaces found, check your token and re-login via 'clockeditup login'")
 	}
 
 	workspaceName := workspaceFlag
@@ -274,98 +267,15 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		workspaceName = conf.Workspace
 	}
 	if workspaceName == "" {
-		logutil.Errorf("no workspace selected, use 'clockidup select' or verify ' -workspace flag' to set a workspace")
+		logutil.Errorf("no workspace selected, use 'clockidup select' or use --workspace")
 		os.Exit(1)
 	}
 
-	workspace, workspaceFound := FindWorkspace(workspaces, workspaceName)
-	if !workspaceFound {
-		logutil.Errorf("Unable to find workspace '%s', use 'clockidup select' or verify ' -workspace flag' to set a workspace", workspaceName)
-		os.Exit(1)
-	}
-	userID := workspace.Memberships[0].UserID
+	clockify := clockify.NewClient(token, clockify.WithServer(*serverFlag))
 
-	timeEntries, err := clockify.TimeEntries(workspace.ID, userID, start, end)
+	mergedEntries, err := timeEntriesForDay(clockify, time.Now, workspaceName, day)
 	if err != nil {
-		return fmt.Errorf("%s", err)
-	}
-
-	projects, err := clockify.Projects(workspace.ID)
-	if err != nil {
-		return fmt.Errorf("%s", err)
-	}
-	projectMap := make(map[string]*Project)
-	for i := range projects {
-		proj := &projects[i]
-		projectMap[proj.ID] = proj
-	}
-
-	// Find the corresponding task when the taskId is set.
-	for i := range timeEntries {
-		entry := &timeEntries[i]
-		if entry.TaskID == "" {
-			continue
-		}
-		task, err := clockify.Task(entry.WorkspaceID, entry.ProjectID, entry.TaskID)
-		if err != nil {
-			return fmt.Errorf("while fetching task for time entry '%s: %s': %s", projectMap[entry.ProjectID].Name, entry.Description, err)
-		}
-		entry.Description = task.Name + ": " + entry.Description
-	}
-
-	// When onlyBillable is enabled, we leave out the non-billable entries.
-	selectBillable := func(entries []TimeEntry) []TimeEntry {
-		var selected []TimeEntry
-		for _, entry := range entries {
-			if entry.Billable {
-				selected = append(selected, entry)
-			}
-		}
-		return selected
-	}
-	if *onlyBillable {
-		timeEntries = selectBillable(timeEntries)
-	}
-
-	// Deduplicate activities: when two activities have the same
-	// description, I merge them by summing up their duration. The key of
-	// the entriesSeen map is the description string.
-	type MergedEntry struct {
-		Project     string
-		Description string
-		Task        string
-		Duration    time.Duration
-		Billable    bool
-	}
-	entriesSeen := make(map[string]*MergedEntry)
-	var mergedEntries []*MergedEntry
-	for _, entry := range timeEntries {
-		existing, found := entriesSeen[entry.Description]
-		if found && !entry.TimeInterval.End.IsZero() {
-			existing.Duration += entry.TimeInterval.End.Sub(entry.TimeInterval.Start)
-			continue
-		}
-
-		projectName := "no-project"
-		if entry.ProjectID != "" {
-			projectName = projectMap[entry.ProjectID].Name
-		}
-
-		// When the time entry is still "ticking" i.e., the user has not
-		// stopped the timer yet, the "end" date is null. In this case, we
-		// still want to have an estimation of how long this entry has been
-		// going on for.
-		duration := entry.TimeInterval.End.Sub(entry.TimeInterval.Start)
-		if entry.TimeInterval.End.IsZero() {
-			duration = time.Now().UTC().Sub(entry.TimeInterval.Start)
-		}
-		new := MergedEntry{
-			Project:     projectName,
-			Description: entry.Description,
-			Duration:    duration,
-		}
-		mergedEntries = append(mergedEntries, &new)
-		entriesSeen[entry.Description] = &new
+		return fmt.Errorf("while merging entries: %w", err)
 	}
 
 	// Print the current day e.g., "Monday" if the date is within a week in
@@ -375,13 +285,14 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 	} else {
 		fmt.Printf("%s:\n", day.Format("2006-01-02"))
 	}
+
 	for i := range mergedEntries {
 		entry := mergedEntries[len(mergedEntries)-i-1]
 
 		// The format "%.1f" (precision = 1) rounds the 2nd digit after the
-		// decimal to the closest neightbor. We also remove the leading
-		// zero to distinguish "small" amounts (e.g. 0.5) from larger
-		// amounts (e.g. 2.0). For example:
+		// decimal to the closest neighbor. We also remove the leading zero to
+		// distinguish "small" amounts (e.g. 0.5) from larger amounts (e.g.
+		// 2.0). For example:
 		//
 		//  0.55 becomes ".5"
 		//  0.56 becomes ".6"
@@ -394,52 +305,4 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 	}
 
 	return nil
-}
-
-// Use Go installed on the system to get the git tag of the running Go
-// executable by running:
-//
-//   go version -m /path/to/binary
-//
-// and by parsing the "mod" line. For example, we want to show "v0.3.0"
-// from the following:
-//
-//   /home/mvalais/go/bin/clockidup: go1.16.3
-//      path    github.com/maelvls/clockidup
-//      mod     github.com/maelvls/clockidup      v0.3.0  h1:84sL4RRZKsyJgSs8KFyE6ykSjtNk79bBVa0ZgC48Kpw=
-//      dep     github.com/AlecAivazis/survey/v2  v2.2.12 h1:5a07y93zA6SZ09gOa9wLVLznF5zTJMQ+pJ3cZK4IuO8=
-func versionUsingGo() (string, error) {
-	bin, err := os.Executable()
-	if err != nil {
-		return "", fmt.Errorf("while trying to find the clockidup binary path: %s", err)
-	}
-	cmd := exec.Command("go", "version", "-m", bin)
-
-	bytes, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("while slurping stdout from 'go version -m %s': %s", bin, err)
-	}
-
-	if cmd.ProcessState.ExitCode() != 0 {
-		return "", fmt.Errorf("running 'go version -m %s': %s", bin, err)
-	}
-
-	// We want to be parsing the following line:
-	//
-	//       mod     github.com/maelvls/clockidup     v0.3.0  h1:84sL4RRZKsyJgSs8KFyE6ykSjtNk79bBVa0ZgC48Kpw=
-	//   <-->   <-->                             <---><---->
-	//   tab    tab                               tab  m[0][1]
-
-	regStr := `mod\s*[^\s]*\s*([^\s]*)`
-	//                        <------>
-	//                         m[0][1]
-
-	reg := regexp.MustCompile(regStr)
-
-	m := reg.FindAllStringSubmatch(string(bytes), 1)
-	if len(m) < 1 || len(m[0]) < 2 {
-		return "", fmt.Errorf("'go version -m %s' did not return a string of the form '%s':\nmatches: %v\nstdout: %s", bin, regStr, m, string(bytes))
-	}
-
-	return m[0][1], nil
 }

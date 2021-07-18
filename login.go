@@ -5,23 +5,20 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 
+	"github.com/maelvls/clockidup/clockify"
 	"github.com/maelvls/clockidup/logutil"
 )
 
-// Should only be called on a non-empty token.
-func tokenWorks(token string) bool {
-	logutil.Debugf("checking whether the token '%s' works", token)
-	clockify := NewClockify(token, nil)
-	_, err := clockify.Workspaces()
-	return err == nil
-}
-
-func askToken(existing Config) (new Config, err error) {
+func promptToken(existingToken string, checkToken func(token string) (bool, error)) (newToken string, _ error) {
 	logutil.Infof("the API token is available at %s", logutil.Green("https://clockify.me/user/settings"))
 
 	// Check whether the existing token already works or not and ask the
 	// user if it already works.
-	if existing.Token != "" && tokenWorks(existing.Token) {
+	works, err := checkToken(existingToken)
+	if err != nil {
+		return "", err
+	}
+	if works {
 		var override bool
 		err = survey.Ask([]*survey.Question{{
 			Name: "override",
@@ -30,14 +27,14 @@ func askToken(existing Config) (new Config, err error) {
 			}}}, &override,
 		)
 		if err != nil {
-			return Config{}, err
+			return "", err
 		}
 		if !override {
-			return existing, nil
+			return existingToken, nil
 		}
 	}
 
-	token := existing.Token
+	token := existingToken
 	err = survey.Ask([]*survey.Question{{
 		Name:   "token",
 		Prompt: &survey.Password{Message: "Clockify API token"}, Validate: func(ans interface{}) error {
@@ -48,23 +45,38 @@ func askToken(existing Config) (new Config, err error) {
 		},
 	}}, &token)
 	if err != nil {
-		return Config{}, err
+		return "", err
 	}
 
-	if !tokenWorks(token) {
-		return Config{}, fmt.Errorf("token seems to be invalid")
+	works, err = checkToken(token)
+	if err != nil {
+		return "", err
+	}
+	if !works {
+		return "", fmt.Errorf("token seems to be invalid")
 	}
 
-	return Config{
-		Token: token,
-	}, nil
+	return token, nil
+}
+
+func checkToken(server string) func(token string) (bool, error) {
+	return func(token string) (bool, error) {
+		_, err := clockify.NewClient(token, clockify.WithServer(server)).Workspaces()
+		if clockify.Is(err, 401) || clockify.Is(err, 403) {
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}
 }
 
 // The existing is the configuration loaded from ~/.config/clockidup.yaml.
-func askWorkspace(existing Config) (new Config, err error) {
+func askWorkspace(client clockifyClient, existing Config) (new Config, err error) {
 	logutil.Debugf("existing workspace: %s", existing.Workspace)
-	clockify := NewClockify(existing.Token, nil)
-	workspaces, err := clockify.Workspaces()
+
+	workspaces, err := client.Workspaces()
 	if err != nil {
 		return Config{}, fmt.Errorf("Failed to list workspaces: %s", err)
 	}
@@ -88,7 +100,7 @@ func askWorkspace(existing Config) (new Config, err error) {
 	return existing, nil
 }
 
-func selectWorkspace(workspaces []Workspace) (string, error) {
+func selectWorkspace(workspaces []clockify.Workspace) (string, error) {
 	var workspaceNames []string
 	var workspace string
 	for _, workspace := range workspaces {
