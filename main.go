@@ -57,6 +57,13 @@ where {{ url "DAY" }} is of the form:
     "2 days ago"
     2021-01-28
 
+{{- if not .Extended }}
+
+To see how to use clockidup, run:
+
+    clockidup help
+
+{{- end -}}
 {{- if .Extended }}
 
 {{ section "HOW TO USE IT" }}
@@ -100,11 +107,7 @@ The auth token is saved to {{ url "~/.config/clockidup.yml" }}. The file looks
 like this:
 
     token: your-clockify-auth-token
-
-{{- end }}
-{{- if not .Extended }}
-
-More help is available with the command {{ yel "clockidup help" }}.
+    workspace: workspace-1
 
 {{- end }}
 
@@ -282,11 +285,11 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 		return fmt.Errorf("while fetching time entries: %w", err)
 	}
 
-	entries = mergeSimilarEntries(entries)
-
 	if *onlyBillable {
 		entries = selectBillable(entries)
 	}
+
+	entries = mergeSimilarEntries(entries)
 
 	// Print the current day e.g., "Monday" if the date is within a week in
 	// the past; otherwise, print "2021-01-28".
@@ -298,6 +301,10 @@ func Run(tokenFlag string, workspaceFlag string, printHelp func(bool) func()) er
 
 	for i := range entries {
 		entry := entries[len(entries)-i-1]
+
+		if entry.Project == "" {
+			entry.Project = "no-project"
+		}
 
 		// The format "%.1f" (precision = 1) rounds the 2nd digit after the
 		// decimal to the closest neighbor. We also remove the leading zero to

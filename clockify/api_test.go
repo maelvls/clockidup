@@ -308,7 +308,7 @@ func TestClockify_TimeEntries(t *testing.T) {
 			Description: "some work with project but no task",
 			TagIds:      []interface{}{},
 			UserID:      "60e086c24f27a949c058082d",
-			Billable:    true,
+			Billable:    false,
 			TaskID:      "",
 			ProjectID:   "60e0a9cf5f596c5a7d10d821",
 			TimeInterval: TimeInterval{

@@ -25,7 +25,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Sun, 18 Jul 2021 18:00:24 GMT
+      - Mon, 19 Jul 2021 08:50:21 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:
@@ -71,7 +71,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Sun, 18 Jul 2021 18:00:24 GMT
+      - Mon, 19 Jul 2021 08:50:21 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:
@@ -110,18 +110,18 @@ interactions:
       work with project but no task","tagIds":[],"userId":"60e086c24f27a949c058082d","billable":true,"taskId":null,"projectId":"60e0a9cf5f596c5a7d10d821","timeInterval":{"start":"2021-07-03T14:45:00Z","end":"2021-07-03T15:30:00Z","duration":"PT45M"},"workspaceId":"60e086c24f27a949c058082e","isLocked":false,"customFieldValues":null},{"id":"60f467bbf547ce2601a54b59","description":"unit-test
       of clockidup, work with project and task","tagIds":[],"userId":"60e086c24f27a949c058082d","billable":true,"taskId":"60e0a9f00afa073620eade56","projectId":"60e0a9cf5f596c5a7d10d821","timeInterval":{"start":"2021-07-03T14:30:00Z","end":"2021-07-03T14:45:00Z","duration":"PT15M"},"workspaceId":"60e086c24f27a949c058082e","isLocked":false,"customFieldValues":null},{"id":"60e0ccf4909afe51901a154c","description":"work
       with no project","tagIds":[],"userId":"60e086c24f27a949c058082d","billable":false,"taskId":null,"projectId":null,"timeInterval":{"start":"2021-07-03T13:30:00Z","end":"2021-07-03T14:00:00Z","duration":"PT30M"},"workspaceId":"60e086c24f27a949c058082e","isLocked":false,"customFieldValues":null},{"id":"60e0cccf909afe51901a151c","description":"some
-      work with project but no task","tagIds":[],"userId":"60e086c24f27a949c058082d","billable":true,"taskId":null,"projectId":"60e0a9cf5f596c5a7d10d821","timeInterval":{"start":"2021-07-03T13:00:00Z","end":"2021-07-03T13:30:00Z","duration":"PT30M"},"workspaceId":"60e086c24f27a949c058082e","isLocked":false,"customFieldValues":null},{"id":"60e0ccbc4f27a949c058498b","description":"unit-test
+      work with project but no task","tagIds":[],"userId":"60e086c24f27a949c058082d","billable":false,"taskId":null,"projectId":"60e0a9cf5f596c5a7d10d821","timeInterval":{"start":"2021-07-03T13:00:00Z","end":"2021-07-03T13:30:00Z","duration":"PT30M"},"workspaceId":"60e086c24f27a949c058082e","isLocked":false,"customFieldValues":null},{"id":"60e0ccbc4f27a949c058498b","description":"unit-test
       of clockidup, work with project and task","tagIds":[],"userId":"60e086c24f27a949c058082d","billable":true,"taskId":"60e0a9f00afa073620eade56","projectId":"60e0a9cf5f596c5a7d10d821","timeInterval":{"start":"2021-07-03T12:30:00Z","end":"2021-07-03T13:00:00Z","duration":"PT30M"},"workspaceId":"60e086c24f27a949c058082e","isLocked":false,"customFieldValues":null},{"id":"60f4681ba18d2d6d98bdab2c","description":"work
       on project-2","tagIds":[],"userId":"60e086c24f27a949c058082d","billable":true,"taskId":null,"projectId":"60f4681a0fdfe402db9afae9","timeInterval":{"start":"2021-07-03T10:30:00Z","end":"2021-07-03T11:15:00Z","duration":"PT45M"},"workspaceId":"60e086c24f27a949c058082e","isLocked":false,"customFieldValues":null}]'
     headers:
       Cache-Control:
       - no-cache, no-store, max-age=0, must-revalidate
       Content-Length:
-      - "2659"
+      - "2660"
       Content-Type:
       - application/json
       Date:
-      - Sun, 18 Jul 2021 18:00:24 GMT
+      - Mon, 19 Jul 2021 08:50:21 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:
@@ -165,7 +165,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Sun, 18 Jul 2021 18:00:24 GMT
+      - Mon, 19 Jul 2021 08:50:21 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:
@@ -209,7 +209,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Sun, 18 Jul 2021 18:00:25 GMT
+      - Mon, 19 Jul 2021 08:50:21 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:
@@ -253,7 +253,281 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Sun, 18 Jul 2021 18:00:25 GMT
+      - Mon, 19 Jul 2021 08:50:21 GMT
+      Expected-Client-Version:
+      - 1.0.0
+      Expires:
+      - "0"
+      Pragma:
+      - no-cache
+      Vary:
+      - Origin
+      - Access-Control-Request-Method
+      - Access-Control-Request-Headers
+      X-Auth-Checksum:
+      - 1ab87e9cee4628aa38414e00f671b439f610886e3af634c98eccee9bbf22e4fc
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept-Encoding:
+      - gzip
+      User-Agent:
+      - Go-http-client/1.1
+      X-Api-Key:
+      - redacted-token
+    url: https://api.clockify.me/api/v1/workspaces
+    method: GET
+  response:
+    body: '[{"id":"60e086c24f27a949c058082e","name":"workspace-1","hourlyRate":{"amount":0,"currency":"USD"},"memberships":[{"userId":"60e086c24f27a949c058082d","hourlyRate":null,"costRate":null,"targetId":"60e086c24f27a949c058082e","membershipType":"WORKSPACE","membershipStatus":"ACTIVE"}],"workspaceSettings":{"timeRoundingInReports":false,"onlyAdminsSeeBillableRates":true,"onlyAdminsCreateProject":true,"onlyAdminsSeeDashboard":false,"defaultBillableProjects":true,"lockTimeEntries":null,"round":{"round":"Round
+      to nearest","minutes":"15"},"projectFavorites":true,"canSeeTimeSheet":false,"canSeeTracker":true,"projectPickerSpecialFilter":false,"forceProjects":false,"forceTasks":false,"forceTags":false,"forceDescription":false,"onlyAdminsSeeAllTimeEntries":false,"onlyAdminsSeePublicProjectsEntries":false,"trackTimeDownToSecond":true,"projectGroupingLabel":"client","adminOnlyPages":[],"automaticLock":null,"onlyAdminsCreateTag":false,"onlyAdminsCreateTask":false,"timeTrackingMode":"DEFAULT","isProjectPublicByDefault":true},"imageUrl":"","featureSubscriptionType":null},{"id":"60e08781bf81bd307230c097","name":"workspace-2","hourlyRate":{"amount":0,"currency":"USD"},"memberships":[{"userId":"60e086c24f27a949c058082d","hourlyRate":null,"costRate":null,"targetId":"60e08781bf81bd307230c097","membershipType":"WORKSPACE","membershipStatus":"ACTIVE"}],"workspaceSettings":{"timeRoundingInReports":false,"onlyAdminsSeeBillableRates":true,"onlyAdminsCreateProject":true,"onlyAdminsSeeDashboard":false,"defaultBillableProjects":true,"lockTimeEntries":null,"round":{"round":"Round
+      to nearest","minutes":"15"},"projectFavorites":true,"canSeeTimeSheet":false,"canSeeTracker":true,"projectPickerSpecialFilter":false,"forceProjects":false,"forceTasks":false,"forceTags":false,"forceDescription":false,"onlyAdminsSeeAllTimeEntries":false,"onlyAdminsSeePublicProjectsEntries":false,"trackTimeDownToSecond":true,"projectGroupingLabel":"client","adminOnlyPages":[],"automaticLock":null,"onlyAdminsCreateTag":false,"onlyAdminsCreateTask":false,"timeTrackingMode":"DEFAULT","isProjectPublicByDefault":true},"imageUrl":"","featureSubscriptionType":null}]'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Content-Length:
+      - "2135"
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 19 Jul 2021 08:50:21 GMT
+      Expected-Client-Version:
+      - 1.0.0
+      Expires:
+      - "0"
+      Pragma:
+      - no-cache
+      Vary:
+      - Origin
+      - Access-Control-Request-Method
+      - Access-Control-Request-Headers
+      X-Auth-Checksum:
+      - 1ab87e9cee4628aa38414e00f671b439f610886e3af634c98eccee9bbf22e4fc
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept-Encoding:
+      - gzip
+      User-Agent:
+      - Go-http-client/1.1
+      X-Api-Key:
+      - redacted-token
+    url: https://api.clockify.me/api/v1/workspaces
+    method: GET
+  response:
+    body: '[{"id":"60e086c24f27a949c058082e","name":"workspace-1","hourlyRate":{"amount":0,"currency":"USD"},"memberships":[{"userId":"60e086c24f27a949c058082d","hourlyRate":null,"costRate":null,"targetId":"60e086c24f27a949c058082e","membershipType":"WORKSPACE","membershipStatus":"ACTIVE"}],"workspaceSettings":{"timeRoundingInReports":false,"onlyAdminsSeeBillableRates":true,"onlyAdminsCreateProject":true,"onlyAdminsSeeDashboard":false,"defaultBillableProjects":true,"lockTimeEntries":null,"round":{"round":"Round
+      to nearest","minutes":"15"},"projectFavorites":true,"canSeeTimeSheet":false,"canSeeTracker":true,"projectPickerSpecialFilter":false,"forceProjects":false,"forceTasks":false,"forceTags":false,"forceDescription":false,"onlyAdminsSeeAllTimeEntries":false,"onlyAdminsSeePublicProjectsEntries":false,"trackTimeDownToSecond":true,"projectGroupingLabel":"client","adminOnlyPages":[],"automaticLock":null,"onlyAdminsCreateTag":false,"onlyAdminsCreateTask":false,"timeTrackingMode":"DEFAULT","isProjectPublicByDefault":true},"imageUrl":"","featureSubscriptionType":null},{"id":"60e08781bf81bd307230c097","name":"workspace-2","hourlyRate":{"amount":0,"currency":"USD"},"memberships":[{"userId":"60e086c24f27a949c058082d","hourlyRate":null,"costRate":null,"targetId":"60e08781bf81bd307230c097","membershipType":"WORKSPACE","membershipStatus":"ACTIVE"}],"workspaceSettings":{"timeRoundingInReports":false,"onlyAdminsSeeBillableRates":true,"onlyAdminsCreateProject":true,"onlyAdminsSeeDashboard":false,"defaultBillableProjects":true,"lockTimeEntries":null,"round":{"round":"Round
+      to nearest","minutes":"15"},"projectFavorites":true,"canSeeTimeSheet":false,"canSeeTracker":true,"projectPickerSpecialFilter":false,"forceProjects":false,"forceTasks":false,"forceTags":false,"forceDescription":false,"onlyAdminsSeeAllTimeEntries":false,"onlyAdminsSeePublicProjectsEntries":false,"trackTimeDownToSecond":true,"projectGroupingLabel":"client","adminOnlyPages":[],"automaticLock":null,"onlyAdminsCreateTag":false,"onlyAdminsCreateTask":false,"timeTrackingMode":"DEFAULT","isProjectPublicByDefault":true},"imageUrl":"","featureSubscriptionType":null}]'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Content-Length:
+      - "2135"
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 19 Jul 2021 08:50:21 GMT
+      Expected-Client-Version:
+      - 1.0.0
+      Expires:
+      - "0"
+      Pragma:
+      - no-cache
+      Vary:
+      - Origin
+      - Access-Control-Request-Method
+      - Access-Control-Request-Headers
+      X-Auth-Checksum:
+      - 1ab87e9cee4628aa38414e00f671b439f610886e3af634c98eccee9bbf22e4fc
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept-Encoding:
+      - gzip
+      User-Agent:
+      - Go-http-client/1.1
+      X-Api-Key:
+      - redacted-token
+    url: https://api.clockify.me/api/v1/workspaces/60e086c24f27a949c058082e/user/60e086c24f27a949c058082d/time-entries?start=2021-07-03T00:00:00Z&end=2021-07-03T23:59:59Z
+    method: GET
+  response:
+    body: '[{"id":"60f467daf547ce2601a54b7f","description":"work with no project","tagIds":[],"userId":"60e086c24f27a949c058082d","billable":false,"taskId":null,"projectId":null,"timeInterval":{"start":"2021-07-03T15:30:00Z","end":"2021-07-03T16:45:00Z","duration":"PT1H15M"},"workspaceId":"60e086c24f27a949c058082e","isLocked":false,"customFieldValues":null},{"id":"60f467cbd5588e20a966c8d2","description":"some
+      work with project but no task","tagIds":[],"userId":"60e086c24f27a949c058082d","billable":true,"taskId":null,"projectId":"60e0a9cf5f596c5a7d10d821","timeInterval":{"start":"2021-07-03T14:45:00Z","end":"2021-07-03T15:30:00Z","duration":"PT45M"},"workspaceId":"60e086c24f27a949c058082e","isLocked":false,"customFieldValues":null},{"id":"60f467bbf547ce2601a54b59","description":"unit-test
+      of clockidup, work with project and task","tagIds":[],"userId":"60e086c24f27a949c058082d","billable":true,"taskId":"60e0a9f00afa073620eade56","projectId":"60e0a9cf5f596c5a7d10d821","timeInterval":{"start":"2021-07-03T14:30:00Z","end":"2021-07-03T14:45:00Z","duration":"PT15M"},"workspaceId":"60e086c24f27a949c058082e","isLocked":false,"customFieldValues":null},{"id":"60e0ccf4909afe51901a154c","description":"work
+      with no project","tagIds":[],"userId":"60e086c24f27a949c058082d","billable":false,"taskId":null,"projectId":null,"timeInterval":{"start":"2021-07-03T13:30:00Z","end":"2021-07-03T14:00:00Z","duration":"PT30M"},"workspaceId":"60e086c24f27a949c058082e","isLocked":false,"customFieldValues":null},{"id":"60e0cccf909afe51901a151c","description":"some
+      work with project but no task","tagIds":[],"userId":"60e086c24f27a949c058082d","billable":false,"taskId":null,"projectId":"60e0a9cf5f596c5a7d10d821","timeInterval":{"start":"2021-07-03T13:00:00Z","end":"2021-07-03T13:30:00Z","duration":"PT30M"},"workspaceId":"60e086c24f27a949c058082e","isLocked":false,"customFieldValues":null},{"id":"60e0ccbc4f27a949c058498b","description":"unit-test
+      of clockidup, work with project and task","tagIds":[],"userId":"60e086c24f27a949c058082d","billable":true,"taskId":"60e0a9f00afa073620eade56","projectId":"60e0a9cf5f596c5a7d10d821","timeInterval":{"start":"2021-07-03T12:30:00Z","end":"2021-07-03T13:00:00Z","duration":"PT30M"},"workspaceId":"60e086c24f27a949c058082e","isLocked":false,"customFieldValues":null},{"id":"60f4681ba18d2d6d98bdab2c","description":"work
+      on project-2","tagIds":[],"userId":"60e086c24f27a949c058082d","billable":true,"taskId":null,"projectId":"60f4681a0fdfe402db9afae9","timeInterval":{"start":"2021-07-03T10:30:00Z","end":"2021-07-03T11:15:00Z","duration":"PT45M"},"workspaceId":"60e086c24f27a949c058082e","isLocked":false,"customFieldValues":null}]'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Content-Length:
+      - "2660"
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 19 Jul 2021 08:50:21 GMT
+      Expected-Client-Version:
+      - 1.0.0
+      Expires:
+      - "0"
+      Pragma:
+      - no-cache
+      Vary:
+      - Origin
+      - Access-Control-Request-Method
+      - Access-Control-Request-Headers
+      X-Auth-Checksum:
+      - 1ab87e9cee4628aa38414e00f671b439f610886e3af634c98eccee9bbf22e4fc
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept-Encoding:
+      - gzip
+      User-Agent:
+      - Go-http-client/1.1
+      X-Api-Key:
+      - redacted-token
+    url: https://api.clockify.me/api/v1/workspaces/60e086c24f27a949c058082e/projects
+    method: GET
+  response:
+    body: '[{"id":"60e0a9cf5f596c5a7d10d821","name":"project-1","hourlyRate":{"amount":0,"currency":"USD"},"clientId":"","workspaceId":"60e086c24f27a949c058082e","billable":true,"memberships":[{"userId":"60e086c24f27a949c058082d","hourlyRate":null,"costRate":null,"targetId":"60e0a9cf5f596c5a7d10d821","membershipType":"PROJECT","membershipStatus":"ACTIVE"}],"color":"#795548","estimate":{"estimate":"PT0S","type":"AUTO"},"archived":false,"duration":"PT2H","clientName":"","note":"","costRate":null,"timeEstimate":{"estimate":"PT0S","type":"AUTO","resetOption":null,"active":false},"budgetEstimate":null,"public":true,"template":false},{"id":"60f4681a0fdfe402db9afae9","name":"project-2","hourlyRate":{"amount":0,"currency":"USD"},"clientId":"","workspaceId":"60e086c24f27a949c058082e","billable":true,"memberships":[{"userId":"60e086c24f27a949c058082d","hourlyRate":null,"costRate":null,"targetId":"60f4681a0fdfe402db9afae9","membershipType":"PROJECT","membershipStatus":"ACTIVE"}],"color":"#FF5722","estimate":{"estimate":"PT0S","type":"AUTO"},"archived":false,"duration":"PT45M","clientName":"","note":"","costRate":null,"timeEstimate":{"estimate":"PT0S","type":"AUTO","resetOption":null,"active":false},"budgetEstimate":null,"public":true,"template":false}]'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Content-Length:
+      - "1250"
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 19 Jul 2021 08:50:21 GMT
+      Expected-Client-Version:
+      - 1.0.0
+      Expires:
+      - "0"
+      Pragma:
+      - no-cache
+      Vary:
+      - Origin
+      - Access-Control-Request-Method
+      - Access-Control-Request-Headers
+      X-Auth-Checksum:
+      - 1ab87e9cee4628aa38414e00f671b439f610886e3af634c98eccee9bbf22e4fc
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept-Encoding:
+      - gzip
+      User-Agent:
+      - Go-http-client/1.1
+      X-Api-Key:
+      - redacted-token
+    url: https://api.clockify.me/api/v1/workspaces/60e086c24f27a949c058082e/projects/60e0a9cf5f596c5a7d10d821/tasks/60e0a9f00afa073620eade56
+    method: GET
+  response:
+    body: '{"id":"60e0a9f00afa073620eade56","name":"task-1","projectId":"60e0a9cf5f596c5a7d10d821","assigneeIds":[],"assigneeId":null,"userGroupIds":[],"estimate":"PT0S","status":"ACTIVE","duration":"PT0S","billable":true,"hourlyRate":null,"costRate":null}'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Content-Length:
+      - "245"
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 19 Jul 2021 08:50:21 GMT
+      Expected-Client-Version:
+      - 1.0.0
+      Expires:
+      - "0"
+      Pragma:
+      - no-cache
+      Vary:
+      - Origin
+      - Access-Control-Request-Method
+      - Access-Control-Request-Headers
+      X-Auth-Checksum:
+      - 1ab87e9cee4628aa38414e00f671b439f610886e3af634c98eccee9bbf22e4fc
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept-Encoding:
+      - gzip
+      User-Agent:
+      - Go-http-client/1.1
+      X-Api-Key:
+      - redacted-token
+    url: https://api.clockify.me/api/v1/workspaces/60e086c24f27a949c058082e/projects/60e0a9cf5f596c5a7d10d821/tasks/60e0a9f00afa073620eade56
+    method: GET
+  response:
+    body: '{"id":"60e0a9f00afa073620eade56","name":"task-1","projectId":"60e0a9cf5f596c5a7d10d821","assigneeIds":[],"assigneeId":null,"userGroupIds":[],"estimate":"PT0S","status":"ACTIVE","duration":"PT0S","billable":true,"hourlyRate":null,"costRate":null}'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Content-Length:
+      - "245"
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 19 Jul 2021 08:50:21 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:
@@ -297,7 +571,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Sun, 18 Jul 2021 18:00:25 GMT
+      - Mon, 19 Jul 2021 08:50:21 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:
@@ -341,7 +615,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Sun, 18 Jul 2021 18:00:25 GMT
+      - Mon, 19 Jul 2021 08:50:21 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:
@@ -387,7 +661,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Sun, 18 Jul 2021 18:00:25 GMT
+      - Mon, 19 Jul 2021 08:50:22 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:
@@ -431,7 +705,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Sun, 18 Jul 2021 18:00:25 GMT
+      - Mon, 19 Jul 2021 08:50:22 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:
@@ -475,7 +749,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Sun, 18 Jul 2021 18:00:25 GMT
+      - Mon, 19 Jul 2021 08:50:22 GMT
       Expected-Client-Version:
       - 1.0.0
       Expires:

@@ -69,6 +69,15 @@ func Test_CLI(t *testing.T) {
 		assert.Equal(t, 0, cli.ProcessState.ExitCode())
 	})
 
+	t.Run("extended help", func(t *testing.T) {
+		cmd := exec.Command(cli, "help")
+		cli := startWith(t, cmd).Wait()
+
+		output := contents(cli.Output)
+		assert.Contains(t, output, "HOW TO USE IT")
+		assert.Equal(t, 0, cli.ProcessState.ExitCode())
+	})
+
 	t.Run("no token available", func(t *testing.T) {
 		home := withConfigInFakeHome(t, "")
 		cmd := exec.Command(cli, "--server=http://localhost:"+port, "2021-07-03")
@@ -116,7 +125,24 @@ func Test_CLI(t *testing.T) {
 			- [.8] project-2: work on project-2
 			- [.8] project-1: unit-test of clockidup, work with project and task
 			- [1.2] project-1: some work with project but no task
-			- [1.8] : work with no project
+			- [1.8] no-project: work with no project
+		`), output)
+
+		assert.Equal(t, 0, cli.ProcessState.ExitCode())
+	})
+
+	t.Run("--billable only shows the entries that are billable", func(t *testing.T) {
+		home := withConfigInFakeHome(t, "")
+		cmd := exec.Command(cli, "--server=http://localhost:"+port, "--billable", "--workspace=workspace-1", "--token="+withToken(t), "2021-07-03")
+		cmd.Env = append(cmd.Env, "HOME="+home)
+		cli := startWith(t, cmd).Wait()
+
+		output := contents(cli.Output)
+		assert.Equal(t, heredoc.Doc(`
+			2021-07-03:
+			- [.8] project-2: work on project-2
+			- [.8] project-1: unit-test of clockidup, work with project and task
+			- [.8] project-1: some work with project but no task
 		`), output)
 
 		assert.Equal(t, 0, cli.ProcessState.ExitCode())
@@ -189,7 +215,7 @@ func withConfigInFakeHome(t *testing.T, clockidupConfigYAML string) string {
 	home, err := ioutil.TempDir("", "clockidup-e2e-*")
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		// os.RemoveAll(home)
+		os.RemoveAll(home)
 	})
 	os.MkdirAll(home+"/.config", 0755)
 
