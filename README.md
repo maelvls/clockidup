@@ -34,7 +34,7 @@ You can also use the pre-built binaries available on the [GitHub
 Release](https://github.com/maelvls/clockidup/releases) page (for Linux and
 macOS).
 
-[![GitHub tag](https://img.shields.io/github/release/maelvls/clockidup.svg)](https://github.com/maelvls/clockidup/releases)
+[![GitHub tag](https://img.shields.io/github/release/maelvls/clockidup.svg)](https://github.com/maelvls/clockidup/releases)[![Coverage Status](https://coveralls.io/repos/github/maelvls/clockidup/badge.svg?branch=main)](https://coveralls.io/github/maelvls/clockidup?branch=main)
 
 ## Usage
 
