@@ -46,6 +46,13 @@ clockidup login
 
 ![](https://user-images.githubusercontent.com/2195781/123278842-95d23200-d507-11eb-8d31-7678575e8d37.gif)
 
+One-liner to submit your standup Slack message (to get a token, open  http://slackcat.chat/configure):
+
+```sh
+TOKEN=xoxp-173d646577f-5586534d56b8a-8c7fa2a0a818b-7af170367a53e9ee3e29465efe807a9e
+clockidup --billable today | tee /dev/stderr >/tmp/standup && curl -s -X POST "https://slack.com/api/chat.postMessage" -d "token=$TOKEN" -d as_user=true -d channel=$(curl -s -X POST "https://slack.com/api/conversations.list" -d "token=$TOKEN" -d types=im,public_channel,private_channel -d limit=1000 | jq '.channels[] | select(.name == "stand-ups") | .id' -r) --data-urlencode text="$(echo '```'; cat /tmp/standup; echo '```')" | jq
+```
+
 If you are using multiple Clockify workspaces, you can also switch between
 workspaces using `clockidup select`
 
